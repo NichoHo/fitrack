@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../assets/css/sidebar.css';
 import logo from '../assets/img/logo.png';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
