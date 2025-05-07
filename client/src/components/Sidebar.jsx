@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import logo from '../assets/img/logo.png';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
+  const [showDropup, setShowDropup] = useState(false);
+
+  const toggleDropup = () => {
+    setShowDropup(!showDropup);
+  };
+
   return (
     <nav className={`sidebar ${isOpen ? '' : 'close'}`}>
       <header>
@@ -39,10 +45,45 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               <span className="nav-text">History</span>
             </a>
           </li>
+          {/* More menu for mobile only */}
+          <li className="nav-link mobile-more-menu">
+            <a href="#" onClick={(e) => {
+              e.preventDefault();
+              toggleDropup();
+            }}>
+              <i className="bx bx-dots-horizontal-rounded icon" />
+              <span className="nav-text">More</span>
+            </a>
+            {showDropup && (
+              <div className="mobile-dropup">
+                <ul>
+                  <li>
+                    <a href="/account">
+                      <i className="bx bx-user icon" />
+                      <span>Account</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/logout">
+                      <i className="bx bx-log-out icon" />
+                      <span>Log Out</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </li>
         </ul>
 
+        {/* Desktop bottom content - hidden on mobile */}
         <div className="nav-bottom-content">
           <ul>
+            <li>
+              <a href="/account">
+                <i className="bx bx-user icon" />
+                {isOpen && <span className="nav-text">Account</span>}
+              </a>
+            </li>
             <li>
               <a href="/logout">
                 <i className="bx bx-log-out icon" />
