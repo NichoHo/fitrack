@@ -57,20 +57,26 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      console.log('Login submitted:', formData);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+  
+    const { data, error } = await supabase
+      .from('User')
+      .select('*')
+      .eq('email', formData.email)
+      .eq('password', formData.password);
+  
+    if (error || data.length === 0) {
+      setErrors({ email: 'Invalid email or password.' });
+    } else {
+      console.log('Login successful for user:', data[0]);
       setSubmitted(true);
-      
-      // Simulate authentication process
+  
       setTimeout(() => {
-        console.log('Redirecting to dashboard...');
-        // Implement your redirect logic here
+        window.location.href = "/dashboard";
       }, 2000);
     }
-  };
+  };  
 
   if (submitted) {
     return (

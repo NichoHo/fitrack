@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import '../assets/css/register.css';
 import 'boxicons/css/boxicons.min.css';
 import logo from '../assets/img/logo.png';
+import { supabase } from '../services/supabase';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -103,23 +104,28 @@ export default function Register() {
     setStep(1);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (step === 1) {
-      handleNext();
-      return;
-    }
-    
-    if (validateStep2()) {
-      console.log('Form submitted:', formData);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+  
+    const { data, error } = await supabase
+      .from('User')
+      .insert([{
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        gender: formData.gender,
+        height: parseFloat(formData.height),
+        weight: parseFloat(formData.weight),
+        goal: formData.goal
+      }]);
+  
+    if (error) {
+      console.error('Error inserting user:', error);
+      setErrors({ email: 'An account with this email may already exist.' });
+    } else {
       setSubmitted(true);
-      
-      setTimeout(() => {
-        console.log('Redirecting to login page...');
-      }, 2000);
     }
-  };
+  };  
 
   if (submitted) {
     return (

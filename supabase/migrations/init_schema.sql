@@ -19,7 +19,8 @@ create table "Exercise" (
   reps int,
   duration int,
   restTime int,
-  difficulty varchar(50)
+  difficulty int,
+  animationUrl text
 );
 
 -- WORKOUT PLAN TABLE
@@ -27,8 +28,9 @@ create table "WorkoutPlan" (
   planId serial primary key,
   planName varchar(100),
   description text,
-  difficulty varchar(50),
-  goal varchar(100)
+  difficulty int,
+  goal varchar(100),
+  userId int references "User"(userId) on delete cascade
 );
 
 -- JOIN TABLE: WorkoutPlan <-> Exercise
@@ -42,10 +44,11 @@ create table "WorkoutPlanExercise" (
 create table "WorkoutLog" (
   logId serial primary key,
   userId int references "User"(userId) on delete cascade,
+  planId int references "WorkoutPlan"(planId) on delete set null,
   date date,
   exerciseDone int,
   totalExercise int,
-  feedback text,
+  feedback int,
   currentWeight int
 );
 
