@@ -1,7 +1,6 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-
-const AuthContext = createContext();
+import { AuthContext } from './authContextObject';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -16,15 +15,15 @@ export function AuthProvider({ children }) {
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange( // Destructure to get 'subscription'
-      (event, session) => { // event is the first parameter
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
     return () => {
-      subscription?.unsubscribe(); // Call unsubscribe on the subscription object
+      subscription?.unsubscribe();
     };
   }, []);
 
