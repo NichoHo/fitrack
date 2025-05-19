@@ -176,6 +176,7 @@
     border-radius: 6px;
     text-decoration: none;
     transition: background 0.3s;
+    gap: 10px;
 }
 
 .nav-bottom-content a:hover {
@@ -296,6 +297,14 @@
 
     .report-card {
         padding: 0.5rem;
+    }
+
+    .nav-link a {
+        gap: 0;
+    }
+
+    .mobile-dropup a {
+        gap: 5px;
     }
 }  
   

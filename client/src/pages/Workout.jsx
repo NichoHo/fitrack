@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import 'boxicons/css/boxicons.min.css';
-import '../assets/css/workout.css';
+import styles from '../assets/css/workout.module.css';
 
 // Import placeholder images - replace with actual assets in production
 import sidebridge from '../assets/img/side-bridge.jpg';
@@ -13,8 +13,7 @@ export default function Workout() {
   const [isResting, setIsResting] = useState(false);
   const [timer, setTimer] = useState(null);
   const [goToNext, setGoToNext] = useState(false);
-  
-  // Sample workout data - would come from API/props in actual implementation
+
   const exercises = [
     {
       id: 1,
@@ -23,7 +22,7 @@ export default function Workout() {
       reps: 6,
       description: "Lie on your right side with your right elbow under your shoulder. Lift your hips and keep your body in a straight line.",
       completed: false,
-      position: 7, // Out of 17 exercises
+      position: 7,
     },
     {
       id: 2,
@@ -33,96 +32,87 @@ export default function Workout() {
       description: "Lie on your back with your legs bent. Twist your knees to one side while keeping your shoulders on the ground.",
       completed: false,
       perSide: 6,
-      position: 8, // Out of 17 exercises
+      position: 8,
     },
   ];
-  
+
   useEffect(() => {
     document.title = 'Workout - Fitrack';
-    
     return () => {
       if (timer) clearInterval(timer);
     };
   }, [timer]);
-  
+
   const startRest = () => {
-  setIsResting(true);
-  setRestTime(30);
-
-  const interval = setInterval(() => {
-        setRestTime(prev => {
+    setIsResting(true);
+    setRestTime(30);
+    const interval = setInterval(() => {
+      setRestTime(prev => {
         if (prev <= 1) {
-            clearInterval(interval);
-            setIsResting(false);
-            setTimer(null);
-
-            if (goToNext && currentExercise < exercises.length - 1) {
+          clearInterval(interval);
+          setIsResting(false);
+          setTimer(null);
+          if (goToNext && currentExercise < exercises.length - 1) {
             setCurrentExercise(prevIndex => prevIndex + 1);
             setGoToNext(false);
-            }
-
-            return 0;
+          }
+          return 0;
         }
         return prev - 1;
-        });
-      }, 1000);
-
+      });
+    }, 1000);
     setTimer(interval);
   };
-  
+
   const addTime = () => {
     setRestTime(prev => prev + 20);
   };
-  
+
   const skipRest = () => {
     if (timer) clearInterval(timer);
     setIsResting(false);
     setTimer(null);
-
     if (goToNext && currentExercise < exercises.length - 1) {
-        setCurrentExercise(prevIndex => prevIndex + 1);
-        setGoToNext(false);
+      setCurrentExercise(prevIndex => prevIndex + 1);
+      setGoToNext(false);
     }
   };
-  
+
   const completeExercise = () => {
     const updatedExercises = [...exercises];
     updatedExercises[currentExercise].completed = true;
-    setGoToNext(true); // mark that we want to go to the next exercise after rest
+    setGoToNext(true);
     startRest();
   };
-  
+
   const moveToNextExercise = () => {
     if (currentExercise < exercises.length - 1) {
       setCurrentExercise(currentExercise + 1);
     }
   };
-  
+
   const moveToPrevExercise = () => {
     if (currentExercise > 0) {
       setCurrentExercise(currentExercise - 1);
     }
   };
-  
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-  
-  // Render progress indicators
+
   const renderProgressDots = () => {
-    // Show 17 dots for full workout
     return (
-      <div className="progress-dots">
+      <div className={styles['progress-dots']}>
         {Array(17).fill().map((_, i) => {
           const current = i === exercises[currentExercise].position - 1;
           const completed = i < exercises[currentExercise].position - 1;
-          
           return (
-            <div 
-              key={i} 
-              className={`progress-dot ${completed ? 'completed' : ''} ${current ? 'current' : ''}`}
+            <div
+              key={i}
+              className={`${styles['progress-dot']} ${completed ? styles.completed : ''} ${current ? styles.current : ''}`}
             />
           );
         })}
@@ -131,74 +121,72 @@ export default function Workout() {
   };
 
   return (
-    <div className="workout-container">
-      <div className="workout-content">
-        <div className="exercise-visual">
-          <Link to="/dashboard" className="back-button">
+    <div className={styles['workout-container']}>
+      <div className={styles['workout-content']}>
+        <div className={styles['exercise-visual']}>
+          <Link to="/dashboard" className={styles['back-button']}>
             <i className='bx bx-arrow-back'></i>
           </Link>
-          
-          <div className="exercise-image-container">
-            <img 
-              src={exercises[currentExercise].image} 
+          <div className={styles['exercise-image-container']}>
+            <img
+              src={exercises[currentExercise].image}
               alt={exercises[currentExercise].name}
-              className="exercise-image" 
+              className={styles['exercise-image']}
             />
           </div>
         </div>
-        
-        <div className="divider"></div>
-        
-        <div className="exercise-details">
+
+        <div className={styles.divider}></div>
+
+        <div className={styles['exercise-details']}>
           {renderProgressDots()}
-          
+
           {isResting ? (
-            <div className="rest-section">
-              <h2 className="rest-title">REST</h2>
-              <div className="rest-timer">{formatTime(restTime)}</div>
-              
-              <div className="rest-controls">
-                <button className="time-button" onClick={addTime}>+20s</button>
-                <button className="skip-button" onClick={skipRest}>Skip</button>
+            <div className={styles['rest-section']}>
+              <h2 className={styles['rest-title']}>REST</h2>
+              <div className={styles['rest-timer']}>{formatTime(restTime)}</div>
+              <div className={styles['rest-controls']}>
+                <button className={styles['time-button']} onClick={addTime}>+20s</button>
+                <button className={styles['skip-button']} onClick={skipRest}>Skip</button>
               </div>
             </div>
           ) : (
-            <div className="exercise-info">
-              <div className="exercise-header">
-                <div className="exercise-position">
+            <div className={styles['exercise-info']}>
+              <div className={styles['exercise-header']}>
+                <div className={styles['exercise-position']}>
                   NEXT {exercises[currentExercise].position}/{17}
                 </div>
-                <h2 className="exercise-title">{exercises[currentExercise].name}</h2>
+                <h2 className={styles['exercise-title']}>{exercises[currentExercise].name}</h2>
               </div>
-              
-              <div className="exercise-counter">
-                {exercises[currentExercise].perSide ? (
-                  <div className="per-side-text">
+
+              <div className={styles['exercise-counter']}>
+                {exercises[currentExercise].perSide && (
+                  <div className={styles['per-side-text']}>
                     Each Side × {exercises[currentExercise].perSide}
                   </div>
-                ) : null}
-                <div className="reps-count">× {exercises[currentExercise].reps}</div>
+                )}
+                <div className={styles['reps-count']}>× {exercises[currentExercise].reps}</div>
               </div>
-              
-              <div className="exercise-description">
+
+              <div className={styles['exercise-description']}>
                 <p>{exercises[currentExercise].description}</p>
               </div>
-              
-              <div className="navigation-controls">
-                <button 
-                  className="nav-button prev" 
+
+              <div className={styles['navigation-controls']}>
+                <button
+                  className={`${styles['nav-button']} ${styles.prev}`}
                   onClick={moveToPrevExercise}
                   disabled={currentExercise === 0}
                 >
                   <i className='bx bx-chevron-left'></i>
                 </button>
-                
-                <button className="complete-button" onClick={completeExercise}>
+
+                <button className={styles['complete-button']} onClick={completeExercise}>
                   <i className='bx bx-check'></i>
                 </button>
-                
-                <button 
-                  className="nav-button next" 
+
+                <button
+                  className={`${styles['nav-button']} ${styles.next}`}
                   onClick={moveToNextExercise}
                   disabled={currentExercise === exercises.length - 1}
                 >

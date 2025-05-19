@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import '../assets/css/login.css';
+import { supabase } from '../services/supabase';
+import { Link, useNavigate } from 'react-router-dom';
+import styles from '../assets/css/login.module.css';
 import 'boxicons/css/boxicons.min.css';
 import logo from '../assets/img/logo.png';
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false
   });
-  
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors]     = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -21,95 +23,78 @@ export default function Login() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const fieldValue = type === 'checkbox' ? checked : value;
-    
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: fieldValue
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
-    
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(prev => !prev);
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const errs = {};
+    if (!formData.email.trim()) errs.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      errs.email = 'Email is invalid';
+
+    if (!formData.password) errs.password = 'Password is required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-  
-    const { data, error } = await supabase
-      .from('User')
-      .select('*')
-      .eq('email', formData.email)
-      .eq('password', formData.password);
-  
-    if (error || data.length === 0) {
-      setErrors({ email: 'Invalid email or password.' });
-    } else {
-      console.log('Login successful for user:', data[0]);
-      setSubmitted(true);
-  
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 2000);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    // Direct Supabase Auth call
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password
+    });
+
+    if (error) {
+      if (error.message.includes('not confirmed')) {
+        setErrors({ email: 'Please confirm your email—check your inbox for the confirmation link.' });
+      } else {
+        setErrors({ email: 'Invalid email or password.' });
+      }
+      return;
     }
-  };  
+  };
 
   if (submitted) {
     return (
-      <div className="login-container">
-        <div className="login-success">
+      <div className={styles['login-container']}>
+        <div className={styles['login-success']}>
           <i className='bx bx-check-circle'></i>
           <h2>Login Successful!</h2>
-          <p>You are being redirected to your dashboard...</p>
+          <p>You are being redirected to your dashboard…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="login-container">
-      <div className="login-header">
-        <Link to="/" className="back-button">
+    <div className={styles['login-container']}>
+      <div className={styles['login-header']}>
+        <Link to="/" className={styles['back-button']}>
           <i className='bx bx-arrow-back'></i>
         </Link>
-        <div className="logo-container">
-          <img src={logo} alt="Fitrack Logo" className="login-logo" />
+        <div className={styles['logo-container']}>
+          <img src={logo} alt="Fitrack Logo" className={styles['login-logo']} />
           <h1>Fitrack</h1>
         </div>
       </div>
-      
-      <div className="login-form-container">
-        <div className="login-form-header">
+
+      <div className={styles['login-form-container']}>
+        <div className={styles['login-form-header']}>
           <h2>Welcome Back!</h2>
           <p>Log in to continue your fitness journey</p>
         </div>
-        
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
+
+        <form onSubmit={handleSubmit} className={styles['login-form']}>
+          <div className={styles['form-group']}>
             <label htmlFor="email">Email Address</label>
             <input
               type="email"
@@ -117,37 +102,37 @@ export default function Login() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={errors.email ? 'error' : ''}
+              className={errors.email ? styles['error'] : ''}
               placeholder="Enter your email"
             />
-            {errors.email && <div className="error-message">{errors.email}</div>}
+            {errors.email && <div className={styles['error-message']}>{errors.email}</div>}
           </div>
-          
-          <div className="form-group">
+
+          <div className={styles['form-group']}>
             <label htmlFor="password">Password</label>
-            <div className="password-input-container">
+            <div className={styles['password-input-container']}>
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={errors.password ? 'error' : ''}
+                className={errors.password ? styles['error'] : ''}
                 placeholder="Enter your password"
               />
-              <button 
-                type="button" 
-                className="toggle-password"
-                onClick={togglePasswordVisibility}
+              <button
+                type="button"
+                className={styles['toggle-password']}
+                onClick={() => setShowPassword(v => !v)}
               >
                 <i className={`bx ${showPassword ? 'bx-hide' : 'bx-show'}`}></i>
               </button>
             </div>
-            {errors.password && <div className="error-message">{errors.password}</div>}
+            {errors.password && <div className={styles['error-message']}>{errors.password}</div>}
           </div>
-          
-          <div className="form-options">
-            <div className="remember-me">
+
+          <div className={styles['form-options']}>
+            <div className={styles['remember-me']}>
               <input
                 type="checkbox"
                 id="rememberMe"
@@ -157,30 +142,17 @@ export default function Login() {
               />
               <label htmlFor="rememberMe">Remember me</label>
             </div>
-            <Link to="/forgot-password" className="forgot-password">Forgot Password?</Link>
+            <Link to="/forgot-password" className={styles['forgot-password']}>
+              Forgot Password?
+            </Link>
           </div>
-          
-          <button type="submit" className="btn-login">
+
+          <button type="submit" className={styles['btn-login']}>
             Login
           </button>
-          
-          <div className="divider">
-            <span>or continue with</span>
-          </div>
-          
-          <div className="social-logins">
-            <button type="button" className="social-btn google">
-              <i className='bx bxl-google'></i>
-              <span>Google</span>
-            </button>
-            <button type="button" className="social-btn facebook">
-              <i className='bx bxl-facebook'></i>
-              <span>Facebook</span>
-            </button>
-          </div>
         </form>
-        
-        <div className="register-link">
+
+        <div className={styles['register-link']}>
           Don't have an account? <Link to="/register">Sign Up</Link>
         </div>
       </div>

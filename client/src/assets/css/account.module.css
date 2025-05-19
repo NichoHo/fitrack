@@ -1,3 +1,13 @@
+.home {
+    padding: 3rem;
+    transition: all 0.3s ease;
+    margin-left: 15rem;
+}
+
+.sidebar.close ~ .home {
+    margin-left: 5rem;
+}
+
 .account-container {
     width: 100%;
     max-width: 800px;
@@ -142,9 +152,14 @@
     color: #c62828;
     border: 1px solid #ef9a9a;
   }
-  
+
   /* Responsive */
   @media (max-width: 767px) {
+    .home {
+      margin-left: 0;
+      padding: 2rem 3rem 5rem;
+    }
+    
     .account-section {
       padding: 1.5rem;
     }

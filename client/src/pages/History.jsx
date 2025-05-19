@@ -1,84 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { supabase } from '../services/supabase';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import 'boxicons/css/boxicons.min.css';
-import '../assets/css/history.css';
+import styles from '../assets/css/history.module.css';
 
 export default function History() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
+  const [calendarData, setCalendarData] = useState({});
+  const [monthlyReport, setMonthlyReport] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // Sample workout data - would be fetched from API in actual implementation
-  const workoutData = {
-    '2025-05-01': { completed: true },
-    '2025-05-02': { completed: true },
-    '2025-05-03': { completed: true },
-    '2025-05-05': { completed: true },
-    '2025-05-06': { completed: true },
-    '2025-05-07': { completed: false },
-    '2025-05-08': { completed: true },
-    '2025-05-09': { completed: false },
-    '2025-05-11': { completed: true },
-    '2025-05-12': { completed: true, current: true },
-  };
-
-  // Sample workout history data
-  const workoutHistory = [
-    {
-      period: 'May 2025',
-      workouts: 15,
-      duration: '25:45',
-      entries: [
-        {
-          name: 'Lose Belly Fat - Day 7',
-          duration: '00:13',
-          calories: 5.3,
-          date: 'May 11, 11:32 PM',
-        },
-        {
-          name: 'Lose Belly Fat - Day 7',
-          duration: '00:04',
-          calories: 1.6,
-          date: 'May 8, 4:43 PM',
-        },
-        {
-          name: 'Lose Belly Fat - Day 7',
-          duration: '00:19',
-          calories: 7.7,
-          date: 'May 6, 11:48 AM',
-        },
-        {
-          name: 'Lose Belly Fat - Day 6',
-          duration: '00:22',
-          calories: 8.2,
-          date: 'May 5, 10:15 AM',
-        },
-        {
-          name: 'Lose Belly Fat - Day 5',
-          duration: '00:13',
-          calories: 4.9,
-          date: 'May 4, 9:30 PM',
-        },
-        // More entries for the month...
-      ]
-    },
-    // Additional months if needed
-  ];
 
   useEffect(() => {
     document.title = 'History - Fitrack';
-    
-    function onResize() {
-      if (window.innerWidth >= 768 && !isOpen) {
-        setIsOpen(true);
+
+    async function fetchLogs() {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        navigate('/login');
+        return;
+      }
+      const userId = userData.user.id;
+
+      const { data, error } = await supabase
+        .from('WorkoutLog')
+        .select('*')
+        .eq('userid', userId)
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('Error loading workout logs:', error.message);
+      } else {
+        processHistory(data);
       }
     }
-    
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [isOpen]);
 
-  // Navigation for calendar month
+    fetchLogs();
+  }, [navigate]);
+
+  function processHistory(data) {
+    const calData = {};
+    const months = {};
+
+    data.forEach(log => {
+      const d = new Date(log.date);
+      const key = d.toLocaleDateString('en-CA');
+      calData[key] = { completed: true };
+
+      const m = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+      if (!months[m]) {
+        months[m] = {
+          period: m,
+          workouts: 0,
+          durationSeconds: 0,
+          entries: []
+        };
+      }
+
+      months[m].workouts += 1;
+      months[m].durationSeconds += log.duration_seconds || 0;
+
+      months[m].entries.push({
+        name: `Plan ${log.planid}`,
+        duration: new Date((log.duration_seconds || 0) * 1000).toISOString().substr(14, 5),
+        calories: log.calories_burned || 0,
+        date: d.toLocaleString('default', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        })
+      });
+    });
+
+    const report = Object.values(months).map(m => {
+      const mmss = new Date(m.durationSeconds * 1000).toISOString().substr(14, 5);
+      return { ...m, duration: mmss };
+    });
+
+    setCalendarData(calData);
+    setMonthlyReport(report);
+  }
+
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
@@ -87,134 +91,107 @@ export default function History() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
-  // Format month and year for display
   const formatMonthYear = (date) => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
-  // Generate days for the current month's calendar
   const renderCalendar = () => {
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
     const startDate = new Date(monthStart);
     const endDate = new Date(monthEnd);
-    
-    const dateFormat = 'YYYY-MM-DD';
     const rows = [];
     let days = [];
     let day = startDate;
-    let formattedDate = '';
 
-    // Create header with day names
     const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    const dayHeaders = daysOfWeek.map(dayName => (
-      <div key={`header-${dayName}`} className="calendar-day-header">
-        {dayName}
-      </div>
+    const dayHeaders = daysOfWeek.map((d, i) => (
+      <div key={`header-${d}-${i}`} className={styles['calendar-day-header']}>{d}</div>
     ));
-    rows.push(<div className="calendar-days-header" key="header">{dayHeaders}</div>);
 
-    // Add empty cells for days before the first of the month
-    let dayOfWeek = day.getDay();
-    for (let i = 0; i < dayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+    rows.push(
+      <div className={styles['calendar-days-header']} key="header-row">
+        {dayHeaders}
+      </div>
+    );
+
+    for (let i = 0; i < day.getDay(); i++) {
+      days.push(<div key={`empty-start-${i}`} className={`${styles['calendar-day']} ${styles.empty}`}></div>);
     }
 
-    // Add days of the month
     while (day <= endDate) {
-      formattedDate = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-      
-      const workoutDay = workoutData[formattedDate];
+      const formattedDate = day.toLocaleDateString('en-CA');
+      const workoutDay = calendarData[formattedDate];
       const isCurrentDay = day.toDateString() === new Date().toDateString();
-      
+
       days.push(
-        <div key={day.toString()} className={`calendar-day ${isCurrentDay ? 'today' : ''}`}>
-          <div className={`day-number ${workoutDay?.current ? 'current' : ''}`}>
-            {workoutDay?.completed ? (
-              <div className="workout-completed">
-                <i className='bx bx-check'></i>
-              </div>
-            ) : day.getDate()}
+        <div key={formattedDate} className={`${styles['calendar-day']} ${isCurrentDay ? styles.today : ''}`}>
+          <div className={styles['day-number']}>
+            {workoutDay?.completed ? <i className='bx bx-check'></i> : day.getDate()}
           </div>
         </div>
       );
 
-      // Start a new row after Saturday
       if (days.length === 7) {
-        rows.push(<div className="calendar-week" key={day.toString()}>{days}</div>);
+        rows.push(<div className={styles['calendar-week']} key={`week-${day}`}>{days}</div>);
         days = [];
       }
-      
-      day = new Date(day.getTime() + 86400000); // add one day
+
+      day = new Date(day.getTime() + 86400000);
     }
 
-    // Add remaining empty cells
     if (days.length > 0) {
       while (days.length < 7) {
-        days.push(<div key={`empty-end-${days.length}`} className="calendar-day empty"></div>);
+        days.push(<div key={`empty-end-${days.length}`} className={`${styles['calendar-day']} ${styles.empty}`}></div>);
       }
-      rows.push(<div className="calendar-week" key="last-row">{days}</div>);
+      rows.push(<div className={styles['calendar-week']} key="last-row">{days}</div>);
     }
 
-    return <div className="calendar-grid">{rows}</div>;
+    return <div className={styles['calendar-grid']}>{rows}</div>;
   };
 
   return (
-    <div className="history-page">
+    <div className={styles['history-page']}>
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-      
-      <div className={`history-content ${isOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-        <div className="history-header">
+
+      <div className={`${styles['history-content']} ${isOpen ? styles['sidebar-open'] : styles['sidebar-closed']}`}>
+        <div className={styles['history-header']}>
           <h1>History</h1>
         </div>
-        
-        <div className="history-container">
-          <div className="calendar-section">
-            <div className="calendar-header">
-              <button className="month-nav" onClick={prevMonth}>
+
+        <div className={styles['history-container']}>
+          <div className={styles['calendar-section']}>
+            <div className={styles['calendar-header']}>
+              <button className={styles['month-nav']} onClick={prevMonth}>
                 <i className='bx bx-chevron-left'></i>
               </button>
               <h2>{formatMonthYear(currentMonth)}</h2>
-              <button className="month-nav" onClick={nextMonth}>
+              <button className={styles['month-nav']} onClick={nextMonth}>
                 <i className='bx bx-chevron-right'></i>
               </button>
             </div>
-            
+
             {renderCalendar()}
           </div>
-          
-          <div className="history-divider"></div>
-          
-          <div className="workout-history-section">
-            <div className="workout-history-content">
-              <h2>Monthly report</h2>
-              
-              {workoutHistory.map((month, index) => (
-                <div key={index} className="monthly-summary">
-                  <div className="month-period">{month.period}</div>
-                  <div className="month-stats">{month.workouts} workout{month.workouts !== 1 ? 's' : ''} {month.duration}</div>
-                  
-                  {month.entries.map((workout, wIndex) => (
-                    <div key={wIndex} className="workout-entry">
-                      <div className="workout-entry-left">
-                        <div className="workout-details">
-                          <div className="workout-name">{workout.name}</div>
-                          <div className="workout-meta">
-                            <span><i className='bx bx-time'></i> {workout.duration}</span>
-                            <span><i className='bx bx-flame'></i> {workout.calories} Kcal</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="workout-date">
-                        {workout.date}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {index < workoutHistory.length - 1 && <div className="divider"></div>}
+
+          <div className={styles['history-divider']}></div>
+
+          <div className={styles['workout-history-section']}>
+            {monthlyReport.map((month, idx) => (
+              <div key={idx} className={styles['monthly-summary']}>
+                <div className={styles['month-period']}>{month.period}</div>
+                <div className={styles['month-stats']}>
+                  {month.workouts} workout{month.workouts !== 1 ? 's' : ''} • {month.duration}
                 </div>
-              ))}
-            </div>
+
+                {month.entries.map((w, i) => (
+                  <div key={i} className={styles['workout-entry']}>
+                    <div><strong>{w.name}</strong> — {w.duration}</div>
+                    <div>{w.calories} kcal • {w.date}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       </div>

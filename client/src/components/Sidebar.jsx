@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../assets/css/sidebar.css';
+import styles from '../assets/css/sidebar.module.css';
 import logo from '../assets/img/logo.png';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -10,53 +10,55 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   };
 
   return (
-    <nav className={`sidebar ${isOpen ? '' : 'close'}`}>
+    <nav className={`${styles.sidebar} ${!isOpen ? styles.close : ''}`}>
       <header>
-        <div className="nav-image-text">
-          <img className="nav-image" src={logo} alt="Fitrack Logo" />
+        <div className={styles['nav-image-text']}>
+          <img className={styles['nav-image']} src={logo} alt="Fitrack Logo" />
           {isOpen && (
-            <div className="nav-text logo-text">
-              <span className="logo-name">Fitrack</span>
+            <div className={`${styles['nav-text']} ${styles['logo-text']}`}>
+              <span className={styles['logo-name']}>Fitrack</span>
             </div>
           )}
         </div>
         <i
-          className="bx bx-chevron-right toggle"
+          className={`bx bx-chevron-right ${styles.toggle}`}
           onClick={() => setIsOpen(!isOpen)}
         />
       </header>
 
-      <div className="nav-menu-bar">
-        <ul className="nav-menu-links">
-          <li className="nav-link">
+      <div className={styles['nav-menu-bar']}>
+        <ul className={styles['nav-menu-links']}>
+          <li className={styles['nav-link']}>
             <a href="/dashboard">
               <i className="bx bx-home-alt icon" />
-              <span className="nav-text">Dashboard</span>
+              <span className={styles['nav-text']}>Dashboard</span>
             </a>
           </li>
-          <li className="nav-link">
+          <li className={styles['nav-link']}>
             <a href="/workout-plans">
               <i className="bx bx-dumbbell icon" />
-              <span className="nav-text">Work Out Plans</span>
+              <span className={styles['nav-text']}>Work Out Plans</span>
             </a>
           </li>
-          <li className="nav-link">
+          <li className={styles['nav-link']}>
             <a href="/history">
               <i className="bx bx-line-chart icon" />
-              <span className="nav-text">History</span>
+              <span className={styles['nav-text']}>History</span>
             </a>
           </li>
-          {/* More menu for mobile only */}
-          <li className="nav-link mobile-more-menu">
-            <a href="#" onClick={(e) => {
-              e.preventDefault();
-              toggleDropup();
-            }}>
+          <li className={`${styles['nav-link']} ${styles['mobile-more-menu']}`}>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                toggleDropup();
+              }}
+            >
               <i className="bx bx-dots-horizontal-rounded icon" />
-              <span className="nav-text">More</span>
+              <span className={styles['nav-text']}>More</span>
             </a>
             {showDropup && (
-              <div className="mobile-dropup">
+              <div className={styles['mobile-dropup']}>
                 <ul>
                   <li>
                     <a href="/account">
@@ -76,19 +78,18 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           </li>
         </ul>
 
-        {/* Desktop bottom content - hidden on mobile */}
-        <div className="nav-bottom-content">
+        <div className={styles['nav-bottom-content']}>
           <ul>
             <li>
               <a href="/account">
                 <i className="bx bx-user icon" />
-                {isOpen && <span className="nav-text">Account</span>}
+                {isOpen && <span className={styles['nav-text']}>Account</span>}
               </a>
             </li>
             <li>
               <a href="/logout">
                 <i className="bx bx-log-out icon" />
-                {isOpen && <span className="nav-text">Log Out</span>}
+                {isOpen && <span className={styles['nav-text']}>Log Out</span>}
               </a>
             </li>
           </ul>
