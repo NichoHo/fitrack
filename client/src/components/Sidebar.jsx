@@ -35,7 +35,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             </a>
           </li>
           <li className={styles['nav-link']}>
-            <a href="/workout-plans">
+            <a href="/workoutplan">
               <i className="bx bx-dumbbell icon" />
               <span className={styles['nav-text']}>Work Out Plans</span>
             </a>

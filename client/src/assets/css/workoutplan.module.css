@@ -17,6 +17,7 @@ body {
 .workout-plan-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-left: 15rem;
   padding: 1rem 3rem;
 }
@@ -25,6 +26,31 @@ body {
   font-size: 1.8rem;
   font-weight: 600;
   margin: 0;
+}
+
+/* Add New Button */
+.add-new-btn {
+  background-color: #03a9f4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7rem 1.2rem;
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.add-new-btn:hover {
+  background-color: #0288d1;
+}
+
+.add-new-btn i {
+  font-size: 1.1rem;
 }
 
 /* Layout adjustments for sidebar */
@@ -51,11 +77,110 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .workout-plan-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Card Header with Options */
+.card-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  padding: 0.5rem;
+}
+
+.options-dropdown {
+  position: relative;
+}
+
+.options-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.options-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.options-btn i {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  overflow: hidden;
+  z-index: 1000;
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.7rem 1rem;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-item i {
+  font-size: 1rem;
+  color: #666;
+}
+
+.dropdown-item:last-child {
+  color: #e74c3c;
+}
+
+.dropdown-item:last-child i {
+  color: #e74c3c;
+}
+
+.dropdown-item:last-child:hover {
+  background-color: #fdf2f2;
 }
 
 .workout-plan-image {
@@ -76,6 +201,10 @@ body {
   font-size: 1.2rem;
   font-weight: 600;
   color: #333;
+}
+
+.workout-plan-title {
+    margin-block-end: 0;
 }
 
 .workout-plan-meta {
@@ -132,6 +261,14 @@ body {
 
 /* Mobile Large (481px - 767px) */
 @media (max-width: 767px) {
+  .workout-plan-header {
+    margin-left: 0;
+    padding: 1rem 3rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
   .workout-cards-container {
     margin-left: 0;
     padding: 2rem 3rem 5rem;
@@ -141,11 +278,23 @@ body {
   .sidebar.close ~ .workout-cards-container {
     margin-left: 0;
     padding: 2rem 3rem 5rem;
+  }
+
+  .sidebar.close ~ .workout-plan-header {
+    margin-left: 0;
   }
 }
 
 /* Mobile Small (≤480px) */
 @media (max-width: 480px) {
+  .workout-plan-header {
+    margin-left: 0;
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
   .workout-cards-container {
     margin-left: 0;
     padding: 2rem 1rem 5rem;
@@ -155,11 +304,19 @@ body {
   .sidebar.close ~ .workout-cards-container {
     margin-left: 0;
     padding: 2rem 1rem 5rem;
+  }
+
+  .sidebar.close ~ .workout-plan-header {
+    margin-left: 0;
   }
 
   .workout-plan-meta {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .dropdown-menu {
+    right: -10px;
   }
 }

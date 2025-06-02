@@ -1,143 +1,470 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import 'boxicons/css/boxicons.min.css';
 import styles from '../assets/css/workout.module.css';
-
-// Import placeholder images - replace with actual assets in production
-import sidebridge from '../assets/img/side-bridge.jpg';
-import obliqueTwist from '../assets/img/oblique-twist.png';
+import { supabase } from '../services/supabase';
 
 export default function Workout() {
+  const { planid } = useParams();
+  const navigate = useNavigate();
+
+  // ─── Prompt when user tries to close/refresh the browser tab ───
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // User profile for ending placeholders
+  const [userProfile, setUserProfile] = useState({ weight: '', height: '' });
+  const [weightValue, setWeightValue] = useState('');
+  const [heightValue, setHeightValue] = useState('');
+
+  // Track elapsed time from start → ending
+  const [startTime] = useState(() => Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Current workout plan info
+  const [workoutPlan, setWorkoutPlan] = useState({});
+
+  // Exercise list
+  const [exercises, setExercises] = useState([]);
   const [currentExercise, setCurrentExercise] = useState(0);
+
+  // Track which set we’re on for the current exercise
+  const [currentSet, setCurrentSet] = useState(1);
+
+  // Rest‐timer state
   const [restTime, setRestTime] = useState(30);
   const [isResting, setIsResting] = useState(false);
-  const [timer, setTimer] = useState(null);
-  const [goToNext, setGoToNext] = useState(false);
+  const [restInterval, setRestInterval] = useState(null);
 
-  const exercises = [
-    {
-      id: 1,
-      name: "SIDE BRIDGES RIGHT",
-      image: sidebridge,
-      reps: 6,
-      description: "Lie on your right side with your right elbow under your shoulder. Lift your hips and keep your body in a straight line.",
-      completed: false,
-      position: 7,
-    },
-    {
-      id: 2,
-      name: "RECLINED OBLIQUE TWIST",
-      image: obliqueTwist,
-      reps: 12,
-      description: "Lie on your back with your legs bent. Twist your knees to one side while keeping your shoulders on the ground.",
-      completed: false,
-      perSide: 6,
-      position: 8,
-    },
-  ];
+  // Exercise‐timer state
+  const [exerciseTime, setExerciseTime] = useState(null);
+  const [exerciseInterval, setExerciseInterval] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
 
+  // When we finish a set, do we go on to the next exercise (true) or next set (false)?
+  const [nextIsNextExercise, setNextIsNextExercise] = useState(false);
+
+  // Flag to indicate entire workout is done
+  const [finished, setFinished] = useState(false);
+
+  // On mount: fetch user, plan name, and exercises
   useEffect(() => {
     document.title = 'Workout - Fitrack';
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [timer]);
 
-  const startRest = () => {
-    setIsResting(true);
-    setRestTime(30);
-    const interval = setInterval(() => {
-      setRestTime(prev => {
+    async function fetchUserProfile() {
+      const {
+        data: { user },
+        error: authErr,
+      } = await supabase.auth.getUser();
+      if (authErr || !user) return;
+      const { data, error } = await supabase
+        .from('User')
+        .select('weight,height')
+        .eq('id', user.id)
+        .single();
+      if (!error && data) {
+        setUserProfile({ weight: data.weight, height: data.height });
+        setWeightValue(data.weight);
+        setHeightValue(data.height);
+      }
+    }
+
+    async function fetchWorkoutPlan() {
+      const { data, error } = await supabase
+        .from('WorkoutPlan')
+        .select('planname')
+        .eq('planid', planid)
+        .single();
+      if (!error && data) {
+        setWorkoutPlan(data);
+      }
+    }
+
+    async function fetchExercises() {
+      const { data: rows, error } = await supabase
+        .from('WorkoutPlanExercise')
+        .select(`
+          exerciseid,
+          exercise_order,
+          Exercise (
+            exerciseid,
+            name,
+            description,
+            sets,
+            reps,
+            duration,
+            animationurl
+          )
+        `)
+        .eq('planid', planid)
+        .order('exercise_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching workout exercises:', error);
+        return;
+      }
+      const list = rows.map((pe) => ({
+        id: pe.exerciseid,
+        name: pe.Exercise.name,
+        image: pe.Exercise.animationurl,
+        description: pe.Exercise.description,
+        sets: pe.Exercise.sets,
+        reps: pe.Exercise.reps,
+        duration: pe.Exercise.duration,
+        completed: false,
+        position: pe.exercise_order,
+      }));
+      setExercises(list);
+    }
+
+    fetchUserProfile();
+    fetchWorkoutPlan();
+    fetchExercises();
+
+    return () => {
+      if (restInterval) clearInterval(restInterval);
+      if (exerciseInterval) clearInterval(exerciseInterval);
+    };
+  }, [planid]);
+
+  // Whenever we switch to a new exercise, reset currentSet and start its timer
+  useEffect(() => {
+    if (exerciseInterval) {
+      clearInterval(exerciseInterval);
+      setExerciseInterval(null);
+    }
+    setIsPaused(false);
+    setCurrentSet(1);
+
+    const ex = exercises[currentExercise];
+    if (ex && ex.duration != null) {
+      setExerciseTime(ex.duration);
+      const iv = setInterval(() => {
+        setExerciseTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(iv);
+            handleCompleteSet();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      setExerciseInterval(iv);
+    } else {
+      setExerciseTime(null);
+    }
+
+    return () => {
+      if (exerciseInterval) {
+        clearInterval(exerciseInterval);
+        setExerciseInterval(null);
+      }
+    };
+  }, [currentExercise, exercises]);
+
+  // Rest countdown
+  useEffect(() => {
+    if (!isResting) return;
+
+    const iv = setInterval(() => {
+      setRestTime((prev) => {
         if (prev <= 1) {
-          clearInterval(interval);
+          clearInterval(iv);
           setIsResting(false);
-          setTimer(null);
-          if (goToNext && currentExercise < exercises.length - 1) {
-            setCurrentExercise(prevIndex => prevIndex + 1);
-            setGoToNext(false);
+          // After rest: either next set or next exercise
+          if (nextIsNextExercise) {
+            // Move to next exercise if available
+            if (currentExercise < exercises.length - 1) {
+              setCurrentExercise((idx) => idx + 1);
+            } else {
+              // Last exercise's rest end: finish workout
+              setFinished(true);
+            }
+          } else {
+            // Start next set of same exercise
+            setCurrentSet((prevSet) => prevSet + 1);
+            startSetTimer();
           }
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-    setTimer(interval);
+
+    setRestInterval(iv);
+    return () => {
+      clearInterval(iv);
+      setRestInterval(null);
+    };
+  }, [isResting, nextIsNextExercise, currentExercise, exercises.length]);
+
+  // Helper: start countdown for the current set
+  const startSetTimer = () => {
+    const ex = exercises[currentExercise];
+    if (!ex || ex.duration == null) return;
+    setExerciseTime(ex.duration);
+    const iv = setInterval(() => {
+      setExerciseTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(iv);
+          handleCompleteSet();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    setExerciseInterval(iv);
+    setIsPaused(false);
   };
 
-  const addTime = () => {
-    setRestTime(prev => prev + 20);
-  };
+  // Called at end of a countdown for one set
+  const handleCompleteSet = () => {
+    const ex = exercises[currentExercise];
+    if (!ex) return;
 
-  const skipRest = () => {
-    if (timer) clearInterval(timer);
-    setIsResting(false);
-    setTimer(null);
-    if (goToNext && currentExercise < exercises.length - 1) {
-      setCurrentExercise(prevIndex => prevIndex + 1);
-      setGoToNext(false);
+    // If this was the last set
+    if (currentSet >= ex.sets) {
+      const updated = [...exercises];
+      updated[currentExercise].completed = true;
+      setExercises(updated);
+      setNextIsNextExercise(true);
+      setIsResting(true);
+      setRestTime(30);
+    } else {
+      // Next set of same exercise
+      setNextIsNextExercise(false);
+      setIsResting(true);
+      setRestTime(30);
     }
   };
 
-  const completeExercise = () => {
-    const updatedExercises = [...exercises];
-    updatedExercises[currentExercise].completed = true;
-    setGoToNext(true);
-    startRest();
-  };
-
   const moveToNextExercise = () => {
-    if (currentExercise < exercises.length - 1) {
-      setCurrentExercise(currentExercise + 1);
+    if (exerciseInterval) {
+      clearInterval(exerciseInterval);
+      setExerciseInterval(null);
+    }
+
+    const lastIdx = exercises.length - 1;
+    if (currentExercise < lastIdx) {
+      // Move to next exercise
+      setCurrentExercise((curr) => curr + 1);
+    } else {
+      // Last exercise: mark completed and finish
+      const updated = [...exercises];
+      updated[lastIdx].completed = true;
+      setExercises(updated);
+      setCurrentSet(exercises[lastIdx].sets);
+      setIsResting(false);
+      setFinished(true);
     }
   };
 
   const moveToPrevExercise = () => {
+    if (exerciseInterval) {
+      clearInterval(exerciseInterval);
+      setExerciseInterval(null);
+    }
     if (currentExercise > 0) {
-      setCurrentExercise(currentExercise - 1);
+      setCurrentExercise((curr) => curr - 1);
+    }
+  };
+
+  const addTime = () => setRestTime((prev) => prev + 20);
+
+  const skipRest = () => {
+    if (restInterval) {
+      clearInterval(restInterval);
+      setRestInterval(null);
+    }
+    setIsResting(false);
+    if (nextIsNextExercise) {
+      // If skipping last exercise’s rest, finish
+      if (currentExercise === exercises.length - 1) {
+        setFinished(true);
+      } else {
+        setCurrentExercise((idx) => idx + 1);
+      }
+    } else {
+      setCurrentSet((prevSet) => prevSet + 1);
+      startSetTimer();
+    }
+  };
+
+  const togglePause = () => {
+    if (isPaused) {
+      // Resume
+      const iv = setInterval(() => {
+        setExerciseTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(iv);
+            handleCompleteSet();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      setExerciseInterval(iv);
+      setIsPaused(false);
+    } else {
+      // Pause
+      if (exerciseInterval) {
+        clearInterval(exerciseInterval);
+        setExerciseInterval(null);
+      }
+      setIsPaused(true);
     }
   };
 
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
   };
 
-  const renderProgressDots = () => {
+  const renderProgressDots = () => (
+    <div className={styles['progress-dots']}>
+      {exercises.map((_, i) => {
+        const completed = exercises[i].completed;
+        const current = i === currentExercise;
+        return (
+          <div
+            key={i}
+            className={`
+              ${styles['progress-dot']}
+              ${completed ? styles.completed : ''}
+              ${current ? styles.current : ''}
+            `}
+          />
+        );
+      })}
+    </div>
+  );
+
+  // Once completed, compute elapsed time
+  useEffect(() => {
+    if (finished) {
+      const endTime = Date.now();
+      setElapsedTime(Math.floor((endTime - startTime) / 1000));
+    }
+  }, [finished, startTime]);
+
+  // Summary stats
+  const totalExercises = exercises.length;
+  const elapsedFormatted = formatTime(elapsedTime);
+
+  // Ending screen
+  if (finished) {
+    const handleFinish = () => navigate('/dashboard');
+
     return (
-      <div className={styles['progress-dots']}>
-        {Array(17).fill().map((_, i) => {
-          const current = i === exercises[currentExercise].position - 1;
-          const completed = i < exercises[currentExercise].position - 1;
-          return (
-            <div
-              key={i}
-              className={`${styles['progress-dot']} ${completed ? styles.completed : ''} ${current ? styles.current : ''}`}
-            />
-          );
-        })}
+      <div className={styles['ending-container']}>
+        <div className={styles['ending-header']}>
+          <h1 className={styles['ending-title']}>Workout Completed!</h1>
+          <h2 className={styles['workout-plan-title']}>{workoutPlan.planname}</h2>
+        </div>
+
+        <div className={styles['stats']}>
+          <div className={styles['stat-item']}>
+            <h3>Exercises</h3>
+            <p>{totalExercises}</p>
+          </div>
+          <div className={styles['stat-item']}>
+            <h3>Calories</h3>
+            <p>0.8</p>
+          </div>
+          <div className={styles['stat-item']}>
+            <h3>Time</h3>
+            <p>{elapsedFormatted}</p>
+          </div>
+        </div>
+
+        <div className={styles['feedback']}>
+          <h3>How do you feel?</h3>
+          <div className={styles['feedback-options']}>
+            <button className={styles.tooHard}>
+              😣<span>Too hard</span>
+            </button>
+            <button className={styles.justRight}>
+              😃<span>Just right</span>
+            </button>
+            <button className={styles.tooEasy}>
+              😌<span>Too easy</span>
+            </button>
+          </div>
+        </div>
+
+        <div className={styles['input-group']}>
+          <label htmlFor="weight">Weight</label>
+          <input
+            id="weight"
+            type="number"
+            placeholder={`${userProfile.weight} kg`}
+            value={weightValue}
+            onChange={(e) => setWeightValue(e.target.value)}
+          />
+        </div>
+
+        <div className={styles['input-group']}>
+          <label htmlFor="height">Height</label>
+          <input
+            id="height"
+            type="number"
+            placeholder={`${userProfile.height} cm`}
+            value={heightValue}
+            onChange={(e) => setHeightValue(e.target.value)}
+          />
+        </div>
+
+        <button onClick={handleFinish} className={styles['finish-button']}>
+          Next
+        </button>
       </div>
     );
-  };
+  }
+
+  // Loading state
+  if (!exercises.length) {
+    return (
+      <div className={styles['workout-container']}>
+        <p>Loading workout...</p>
+      </div>
+    );
+  }
+
+  // Active exercise or rest
+  const ex = exercises[currentExercise];
 
   return (
     <div className={styles['workout-container']}>
       <div className={styles['workout-content']}>
+        {/* Left Visual Section */}
         <div className={styles['exercise-visual']}>
-          <Link to="/dashboard" className={styles['back-button']}>
-            <i className='bx bx-arrow-back'></i>
-          </Link>
+          {/* Back → custom confirmation, then navigate to WorkoutDetail */}
+          <button
+            className={styles['back-button']}
+            onClick={() => {
+              const leave = window.confirm('Are you sure you want to leave the workout?');
+              if (leave) {
+                navigate(`/workoutdetail/${planid}`);
+              }
+            }}
+          >
+            <i className="bx bx-arrow-back"></i>
+          </button>
           <div className={styles['exercise-image-container']}>
-            <img
-              src={exercises[currentExercise].image}
-              alt={exercises[currentExercise].name}
-              className={styles['exercise-image']}
-            />
+            <img src={ex.image} alt={ex.name} className={styles['exercise-image']} />
           </div>
         </div>
 
         <div className={styles.divider}></div>
 
+        {/* Right Details Section */}
         <div className={styles['exercise-details']}>
           {renderProgressDots()}
 
@@ -146,51 +473,85 @@ export default function Workout() {
               <h2 className={styles['rest-title']}>REST</h2>
               <div className={styles['rest-timer']}>{formatTime(restTime)}</div>
               <div className={styles['rest-controls']}>
-                <button className={styles['time-button']} onClick={addTime}>+20s</button>
-                <button className={styles['skip-button']} onClick={skipRest}>Skip</button>
+                <button className={styles['time-button']} onClick={addTime}>
+                  +20s
+                </button>
+                <button className={styles['skip-button']} onClick={skipRest}>
+                  Skip
+                </button>
               </div>
             </div>
           ) : (
             <div className={styles['exercise-info']}>
               <div className={styles['exercise-header']}>
                 <div className={styles['exercise-position']}>
-                  NEXT {exercises[currentExercise].position}/{17}
+                  {currentExercise + 1}/{exercises.length}
                 </div>
-                <h2 className={styles['exercise-title']}>{exercises[currentExercise].name}</h2>
+                <h2 className={styles['exercise-title']}>{ex.name}</h2>
               </div>
 
-              <div className={styles['exercise-counter']}>
-                {exercises[currentExercise].perSide && (
-                  <div className={styles['per-side-text']}>
-                    Each Side × {exercises[currentExercise].perSide}
+              {/* Show "Set X/Y" for duration-based */}
+              {ex.duration != null && (
+                <div className={styles['exercise-counter']}>
+                  <div className={styles['sets-text']}>
+                    Set {currentSet}/{ex.sets}
                   </div>
-                )}
-                <div className={styles['reps-count']}>× {exercises[currentExercise].reps}</div>
-              </div>
+                  <div className={styles['duration-timer']}>
+                    {formatTime(exerciseTime)}
+                  </div>
+                </div>
+              )}
+
+              {/* Show reps for rep-based */}
+              {ex.duration == null && (
+                <div className={styles['exercise-counter']}>
+                  <div className={styles['sets-text']}>
+                    Set {currentSet}/{ex.sets}
+                  </div>
+                  <div className={styles['reps-count']}>× {ex.reps}</div>
+                </div>
+              )}
 
               <div className={styles['exercise-description']}>
-                <p>{exercises[currentExercise].description}</p>
+                <p>{ex.description}</p>
               </div>
 
               <div className={styles['navigation-controls']}>
                 <button
-                  className={`${styles['nav-button']} ${styles.prev}`}
+                  className={`${styles['nav-button']} ${styles['prev-button']}`}
                   onClick={moveToPrevExercise}
                   disabled={currentExercise === 0}
+                  title="Previous"
                 >
-                  <i className='bx bx-chevron-left'></i>
+                  <i className="bx bx-chevron-left"></i>
                 </button>
 
-                <button className={styles['complete-button']} onClick={completeExercise}>
-                  <i className='bx bx-check'></i>
-                </button>
+                {ex.duration != null && (
+                  <button
+                    className={`${styles['nav-button']} ${styles['pause-button']}`}
+                    onClick={togglePause}
+                    title={isPaused ? 'Resume' : 'Pause'}
+                  >
+                    <i className={`bx ${isPaused ? 'bx-play' : 'bx-pause'}`}></i>
+                  </button>
+                )}
+
+                {ex.duration == null && (
+                  <button
+                    className={`${styles['nav-button']} ${styles['complete-button']}`}
+                    onClick={handleCompleteSet}
+                    title="Complete"
+                  >
+                    <i className="bx bx-check"></i>
+                  </button>
+                )}
 
                 <button
-                  className={`${styles['nav-button']} ${styles.next}`}
+                  className={`${styles['nav-button']} ${styles['next-button']}`}
                   onClick={moveToNextExercise}
-                  disabled={currentExercise === exercises.length - 1}
+                  title="Next"
                 >
-                  <i className='bx bx-chevron-right'></i>
+                  <i className="bx bx-chevron-right"></i>
                 </button>
               </div>
             </div>
