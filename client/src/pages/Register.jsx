@@ -210,7 +210,7 @@ export default function Register() {
                   <option value="">Select Goal</option>
                   <option value="Weight Loss">Weight Loss</option>
                   <option value="Muscle Gain">Muscle Gain</option>
-                  <option value="Improved Cardiovascular Health">Improved Cardiovascular Health</option>
+                  <option value="Cardiovascular Health">Cardiovascular Health</option>
                   <option value="Flexibility and Mobility">Flexibility and Mobility</option>
                 </select>
                 {errors.goal && <div className={styles['error-message']}>{errors.goal}</div>}
