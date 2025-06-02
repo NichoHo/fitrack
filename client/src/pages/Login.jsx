@@ -14,7 +14,6 @@ export default function Login() {
     rememberMe: false
   });
   const [errors, setErrors]     = useState({});
-  const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -61,26 +60,13 @@ export default function Login() {
       }
       return;
     }
+    // Redirect to dashboard on successful login
+    navigate('/dashboard');
   };
-
-  if (submitted) {
-    return (
-      <div className={styles['login-container']}>
-        <div className={styles['login-success']}>
-          <i className='bx bx-check-circle'></i>
-          <h2>Login Successful!</h2>
-          <p>You are being redirected to your dashboard…</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles['login-container']}>
       <div className={styles['login-header']}>
-        <Link to="/" className={styles['back-button']}>
-          <i className='bx bx-arrow-back'></i>
-        </Link>
         <div className={styles['logo-container']}>
           <img src={logo} alt="Fitrack Logo" className={styles['login-logo']} />
           <h1>Fitrack</h1>
@@ -142,7 +128,7 @@ export default function Login() {
               />
               <label htmlFor="rememberMe">Remember me</label>
             </div>
-            <Link to="/forgot-password" className={styles['forgot-password']}>
+            <Link to="/forget-password" className={styles['forgot-password']}>
               Forgot Password?
             </Link>
           </div>

@@ -31,121 +31,59 @@
 .history-container {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 1rem; /* Added gap for better separation between sections */
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   overflow: hidden;
+  padding: 1.5rem; /* Added padding to the container itself */
 }
 
 .calendar-section {
   background-color: white;
-  padding: 1.5rem;
+  padding: 0; /* Removed padding here as it's added to history-container */
   flex-shrink: 0;
+  border-radius: 10px; /* Added border-radius for consistency */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Added shadow for calendar */
 }
 
-.calendar-header {
+
+.workout-entry-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.calendar-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.month-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #333;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  transition: background-color 0.3s;
-}
-
-.month-nav:hover {
-  background-color: rgba(0,0,0,0.05);
-}
-
-.calendar-days-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  font-weight: 500;
-  color: #888;
   margin-bottom: 0.5rem;
 }
 
-.calendar-week {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 5px;
+.exercise-details-header {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #555;
+  border-bottom: 1px dashed #eee;
+  padding-bottom: 0.5rem;
 }
 
-.calendar-day {
-  aspect-ratio: 1;
+.exercise-item {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f9f9f9;
+  font-size: 0.95rem;
 }
 
-.calendar-day.empty {
-  border: none;
+.exercise-item:last-child {
+  border-bottom: none;
 }
 
-.day-number {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.exercise-name {
   font-weight: 500;
-  border-radius: 50%;
-  transition: all 0.3s;
+  color: #444;
 }
 
-.day-number.current {
-  background-color: #03A9F4;
-  color: white;
-  position: relative;
-}
-
-.day-number.current::after {
-  content: '';
-  position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background-color: #03A9F4;
-  border-radius: 50%;
-}
-
-.workout-completed {
-  background-color: #03A9F4;
-  color: white;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.workout-completed i {
-  font-size: 20px;
+.exercise-stats {
+  color: #666;
 }
 
 .history-divider {
@@ -164,9 +102,11 @@
 
 .workout-history-section {
   background-color: white;
-  padding: 1.5rem;
+  padding: 0; /* Removed padding here as it's added to history-container */
   overflow-y: auto;
   max-height: 100%;
+  border-radius: 10px; /* Added border-radius for consistency */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Added shadow for workout details */
 }
 
 .workout-history-content h2 {
@@ -194,9 +134,13 @@
 
 .workout-entry {
   display: flex;
-  justify-content: space-between;
-  padding: 1rem 0;
+  flex-direction: column; /* Changed to column for better stacking of details */
+  padding: 1rem;
   border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 1rem; /* Added margin-bottom for separation */
+  border-radius: 8px; /* Slightly rounded corners for each entry */
+  background-color: #fdfdfd; /* Light background for entries */
+  box-shadow: 0 1px 5px rgba(0,0,0,0.05); /* Subtle shadow for entries */
 }
 
 .workout-entry:last-child {
@@ -211,18 +155,21 @@
 .workout-details {
   display: flex;
   flex-direction: column;
+  flex: 1; /* Allow details to take available space */
 }
 
 .workout-name {
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem; /* Increased margin for better spacing */
+  color: #333; /* Darker color for workout name */
 }
 
 .workout-meta {
   display: flex;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: #888;
+  gap: 1.5rem; /* Increased gap */
+  font-size: 0.85rem; /* Slightly smaller font size */
+  color: #666; /* Slightly darker color */
+  margin-bottom: 2rem; /* Enhanced spacing for better visual hierarchy */
 }
 
 .workout-meta span {
@@ -246,6 +193,155 @@
   height: 1px;
   background-color: #eee;
   margin: 1rem 0;
+  display: none; /* Hide for now, as gap in container handles separation */
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem 2rem;
+}
+
+.calendar-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  color: #333;
+}
+
+.calendar-header button {
+  background: none;
+  border: none;
+  font-size: 1.5rem; /* Larger icons for navigation */
+  color: #333;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Added box-shadow to transition */
+  min-width: 44px;
+  height: 44px;
+  display: flex; /* Use flex to center the icon */
+  justify-content: center;
+  align-items: center;
+}
+
+.calendar-header button:enabled:hover {
+  background-color: #e6f7ff;
+}
+
+.calendar-header button:enabled:focus {
+  outline: none; /* Remove default focus outline */
+}
+
+.calendar-header button:enabled:active {
+  background-color: #cce9ff; /* A slightly darker shade on active for click feedback */
+  box-shadow: none; /* Ensure no retained shadow */
+}
+
+.calendar-grid-container {
+  padding: 0 1rem 1rem 1rem;
+}
+
+.calendar-weekdays {
+  display: flex; /* Changed to flexbox for better alignment control */
+  justify-content: space-around; /* Distribute items evenly */
+  width: 100%; /* Ensure it takes full width of its container */
+  text-align: center;
+  font-weight: 600;
+  color: #888;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* Keep grid for days */
+  gap: 5px;
+  justify-items: center; /* Center days within their grid cells */
+  align-items: center; /* Vertically align items in the middle */
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.9rem;
+  border-radius: 50%;
+  transition: all 0.2s ease-in-out;
+  padding: 0;
+  position: relative;
+  height: 45px;
+  width: 45px;
+  line-height: 1;
+  cursor: pointer;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: center; /* Center text within the circle */
+}
+
+.calendar-day:hover {
+  background-color: #f0f8ff;
+  color: #333;
+}
+
+.calendar-day.other-month {
+  color: #ccc;
+}
+
+.calendar-day.selected-date {
+  background-color: #03A9F4 !important;
+  color: white;
+  font-weight: 600;
+  z-index: 2; /* Ensure selected date is above current day */
+  position: relative; /* Needed for z-index to work */
+}
+
+.calendar-day.current-day {
+  border: 2px solid #28a745; /* Green border for current day */
+  background-color: #e6ffed; /* Light green background */
+  color: #28a745; /* Green text color */
+  box-sizing: border-box; /* Ensure border is included in element's total dimensions */
+  z-index: 1; /* Ensure current day is below selected date */
+}
+
+/* Specific rule for when current day is also the selected day */
+.calendar-day.selected-date.current-day {
+  color: white !important; /* Ensure text is white when both classes are applied */
+  background-color: #03A9F4 !important; /* Keep selected date background */
+  border-color: #28a745; /* Keep current day border */
+}
+
+.workout-completed-mark {
+  background-color: #03A9F4; /* Blue color for the mark */
+  height: 5px; /* Smaller height */
+  width: 5px; /* Smaller width */
+  border-radius: 50%;
+  position: absolute;
+  bottom: 5px; /* Adjusted position for better separation from date number */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3; /* Ensure it's above both current day and selected date */
+}
+
+.daily-workout-details-section {
+  background-color: #fff; /* Explicitly set background */
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 100%;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Add shadow for this section */
+}
+
+.daily-workout-details-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
 }
 
 /* Responsive Styles */
@@ -256,23 +352,14 @@
     height: calc(100vh - 120px);
   }
   
-  .calendar-section, 
-  .workout-history-section {
+  .calendar-section,
+  .daily-workout-details-section {
     flex: 1;
+    height: 100%;
   }
   
   .history-divider {
-    flex-direction: column;
-    width: auto;
-    padding: 1rem 0;
-  }
-
-  .history-divider::before,
-  .history-divider::after {
-    border-bottom: none;
-    border-left: 1px solid #ddd;
-    height: 100px;
-    width: 0;
+    display: none;
   }
 }
 
@@ -281,10 +368,9 @@
     margin-bottom: 0;
   }
   
-  .day-number {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
+  .daily-workout-details-section {
+    max-height: 60vh;
+    padding-top: 0;
   }
 
   .history-container {
@@ -292,12 +378,18 @@
     max-height: none;
   }
 
-  .workout-history-section {
-    max-height: 60vh;
-  }
-
   .history-divider {
     padding: 0.5rem 1.5rem;
+    display: block;
+  }
+
+  .history-container {
+    gap: 0;
+  }
+
+  .calendar-section,
+  .daily-workout-details-section {
+    padding: 1.5rem;
   }
 }
 
@@ -318,5 +410,15 @@
 
   .history-content {
     padding-bottom: 2rem;
+  }
+
+  .workout-entry {
+    flex-direction: column;
+    padding: 0.75rem;
+  }
+
+  .calendar-day {
+    height: 40px;
+    font-size: 0.8rem;
   }
 }
