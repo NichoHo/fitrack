@@ -291,7 +291,7 @@
 }
 
 .ending-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #03A9F4 0%, #0288D1 100%);
   padding: 3rem 2rem 2rem;
   text-align: center;
   color: white;
@@ -387,9 +387,9 @@
 }
 
 .feedback-options button:hover {
-  border-color: #667eea;
+  border-color: #03A9F4;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px rgba(3, 169, 244, 0.2);
 }
 
 .feedback-options button span {
@@ -438,7 +438,7 @@
 
 .input-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #03A9F4;
 }
 
 .finish-button {

@@ -15,6 +15,7 @@ import History from './pages/History';
 import WorkoutPlan from './pages/WorkoutPlan';
 import WorkoutDetail from './pages/WorkoutDetail';
 
+
 export default function App() {
   return (
     <AuthProvider>
@@ -26,14 +27,9 @@ export default function App() {
           <Route path="/forget-password" element={<ForgetPassword />} />
           <Route path="/update-password" element={<UpdatePassword />} /> {/* Add UpdatePassword route */}
 
-          {/* Private */}
           <Route
             path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
+            element={<Dashboard />}
           />
           <Route
             path="/dashboard"
