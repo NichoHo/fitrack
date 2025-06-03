@@ -6,6 +6,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgetPassword from './pages/ForgetPassword'; // Import ForgetPassword
+import UpdatePassword from './pages/UpdatePassword'; // Import UpdatePassword
 import Dashboard from './pages/Dashboard';
 import Account from './pages/Account';
 import Workout from './pages/Workout';
@@ -21,6 +23,8 @@ export default function App() {
           {/* Public */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forget-password" element={<ForgetPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} /> {/* Add UpdatePassword route */}
 
           {/* Private */}
           <Route
