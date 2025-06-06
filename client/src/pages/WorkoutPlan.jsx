@@ -182,7 +182,8 @@ const WorkoutPlan = () => {
               />
               <div className={styles["workout-plan-content"]}>
                 <h3 className={styles["workout-plan-title"]}>{plan.planname}</h3>
-                <p>{plan.description}</p>
+                <p className={styles["workout-plan-goal"]}>{plan.goal}</p>
+                <p className={styles["workout-plan-description"]}>{plan.description}</p>
                 <div className={styles["workout-plan-meta"]}>
                   <DifficultyRating difficulty={plan.difficulty} />
                   <span className={styles["meta-item"]}>

@@ -78,6 +78,7 @@ export default function Register() {
     setErrors({});
 
     try {
+      // 1) Create the new user via Supabase Auth
       const { data: authData, error: authError } = await signUp({
         email: formData.email,
         password: formData.password,
@@ -94,11 +95,100 @@ export default function Register() {
 
       if (authError) {
         setGeneralError(authError.message || 'Failed to create account. Please try again.');
-      } else if (authData?.user || (authData && !authData.session && authData.user === null && !authError)) {
-        setSubmitted(true);
-      } else {
-        setGeneralError('An unexpected error occurred during sign up.');
+        setLoading(false);
+        return;
       }
+
+      // Supabase returns authData.user once the account is created
+      const newUser = authData.user;
+      if (!newUser || !newUser.id) {
+        // Unexpected case where no user object is returned
+        setGeneralError('An unexpected error occurred during sign up.');
+        setLoading(false);
+        return;
+      }
+
+      // 2) Insert the three default plans into WorkoutPlan
+      //    We’re using .insert(...).select() to retrieve each new plan’s planid
+      const defaultPlans = [
+        {
+          planname: 'Fat Burner',
+          description: 'A mix of cardio and core exercises to aid fat loss.',
+          difficulty: 4,
+          goal: 'Weight Loss',
+          userid: newUser.id
+        },
+        {
+          planname: 'Muscle Builder',
+          description: 'A strength-focused routine with heavy compound lifts for hypertrophy.',
+          difficulty: 5,
+          goal: 'Muscle Gain',
+          userid: newUser.id
+        },
+        {
+          planname: 'Cardio Boost',
+          description: 'A cardio-centric routine to boost heart and lung capacity.',
+          difficulty: 5,
+          goal: 'Cardiovascular Health',
+          userid: newUser.id
+        }
+      ];
+
+      const { data: insertedPlans, error: planInsertError } = await supabase
+        .from('WorkoutPlan')
+        .insert(defaultPlans)
+        .select('planid'); 
+      // --> `insertedPlans` will be an array like: [ { planid: 7 }, { planid: 8 }, { planid: 9 } ]
+
+      if (planInsertError) {
+        console.error('Error inserting default plans:', planInsertError);
+        // We do not abort the whole flow if plans fail—still consider the user created. 
+        // However, you can choose to show an error message here if you prefer:
+        // setGeneralError('Account created, but failed to add default workout plans.');
+        setSubmitted(true);
+        setLoading(false);
+        return;
+      }
+
+      // 3) Build and insert the corresponding WorkoutPlanExercise rows
+      //    The JSON you provided maps exactly to each plan’s exercises.
+      //    We must match `insertedPlans[0].planid` → exercises for “Fat Burner” and so on.
+      const planExercises = [
+        // For "Fat Burner"  (insertedPlans[0])
+        { planid: insertedPlans[0].planid, exerciseid: 78, exercise_order: 1 },
+        { planid: insertedPlans[0].planid, exerciseid: 79, exercise_order: 2 },
+        { planid: insertedPlans[0].planid, exerciseid: 80, exercise_order: 3 },
+        { planid: insertedPlans[0].planid, exerciseid: 73, exercise_order: 4 },
+        { planid: insertedPlans[0].planid, exerciseid: 77, exercise_order: 5 },
+
+        // For "Muscle Builder" (insertedPlans[1])
+        { planid: insertedPlans[1].planid, exerciseid: 49, exercise_order: 1 },
+        { planid: insertedPlans[1].planid, exerciseid: 58, exercise_order: 2 },
+        { planid: insertedPlans[1].planid, exerciseid: 67, exercise_order: 3 },
+        { planid: insertedPlans[1].planid, exerciseid: 62, exercise_order: 4 },
+        { planid: insertedPlans[1].planid, exerciseid: 59, exercise_order: 5 },
+
+        // For "Cardio Boost" (insertedPlans[2])
+        { planid: insertedPlans[2].planid, exerciseid: 78, exercise_order: 1 },
+        { planid: insertedPlans[2].planid, exerciseid: 79, exercise_order: 2 },
+        { planid: insertedPlans[2].planid, exerciseid: 81, exercise_order: 3 },
+        { planid: insertedPlans[2].planid, exerciseid: 82, exercise_order: 4 },
+        { planid: insertedPlans[2].planid, exerciseid: 80, exercise_order: 5 }
+      ];
+
+      const { error: planExInsertError } = await supabase
+        .from('WorkoutPlanExercise')
+        .insert(planExercises);
+
+      if (planExInsertError) {
+        console.error('Error inserting default plan exercises:', planExInsertError);
+        // Again—we’ve already created the user and plans, so we’ll consider signup “successful.”
+        // If you want to inform the user, you could set: 
+        // setGeneralError('Account created, but failed to add exercises to default plans.');
+      }
+
+      // 4) Finally, mark registration as submitted (so they see “Check your email”)
+      setSubmitted(true);
     } catch (error) {
       console.error('Registration submission error:', error);
       setGeneralError('An unexpected error occurred. Please try again.');
@@ -153,23 +243,55 @@ export default function Register() {
               <h3>Account Information</h3>
               <div className={styles['form-group']}>
                 <label htmlFor="name">Full Name</label>
-                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className={errors.name ? styles.error : ''} disabled={loading} />
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={errors.name ? styles.error : ''}
+                  disabled={loading}
+                />
                 {errors.name && <div className={styles['error-message']}>{errors.name}</div>}
               </div>
               <div className={styles['form-group']}>
                 <label htmlFor="email">Email Address</label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className={errors.email ? styles.error : ''} disabled={loading} />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={errors.email ? styles.error : ''}
+                  disabled={loading}
+                />
                 {errors.email && <div className={styles['error-message']}>{errors.email}</div>}
               </div>
               <div className={styles['form-group']}>
                 <label htmlFor="password">Password</label>
-                <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} className={errors.password ? styles.error : ''} disabled={loading} />
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={errors.password ? styles.error : ''}
+                  disabled={loading}
+                />
                 {errors.password && <div className={styles['error-message']}>{errors.password}</div>}
                 {!errors.password && <div className={styles['password-hint']}>Password must be at least 6 characters</div>}
               </div>
               <div className={styles['form-group']}>
                 <label htmlFor="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className={errors.confirmPassword ? styles.error : ''} disabled={loading} />
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={errors.confirmPassword ? styles.error : ''}
+                  disabled={loading}
+                />
                 {errors.confirmPassword && <div className={styles['error-message']}>{errors.confirmPassword}</div>}
               </div>
               <div className={styles['form-actions']}>
@@ -183,7 +305,14 @@ export default function Register() {
               <h3>Personal Information</h3>
               <div className={styles['form-group']}>
                 <label htmlFor="gender">Gender</label>
-                <select id="gender" name="gender" value={formData.gender} onChange={handleChange} className={errors.gender ? styles.error : ''} disabled={loading}>
+                <select
+                  id="gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className={errors.gender ? styles.error : ''}
+                  disabled={loading}
+                >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -195,28 +324,60 @@ export default function Register() {
               <div className={styles['form-row']}>
                 <div className={`${styles['form-group']} ${styles.half}`}>
                   <label htmlFor="height">Height (cm)</label>
-                  <input type="number" id="height" name="height" value={formData.height} onChange={handleChange} min="100" max="250" className={errors.height ? styles.error : ''} disabled={loading} />
+                  <input
+                    type="number"
+                    id="height"
+                    name="height"
+                    value={formData.height}
+                    onChange={handleChange}
+                    min="100"
+                    max="250"
+                    className={errors.height ? styles.error : ''}
+                    disabled={loading}
+                  />
                   {errors.height && <div className={styles['error-message']}>{errors.height}</div>}
                 </div>
                 <div className={`${styles['form-group']} ${styles.half}`}>
                   <label htmlFor="weight">Weight (kg)</label>
-                  <input type="number" id="weight" name="weight" value={formData.weight} onChange={handleChange} min="30" max="300" step="0.1" className={errors.weight ? styles.error : ''} disabled={loading} />
+                  <input
+                    type="number"
+                    id="weight"
+                    name="weight"
+                    value={formData.weight}
+                    onChange={handleChange}
+                    min="30"
+                    max="300"
+                    step="0.1"
+                    className={errors.weight ? styles.error : ''}
+                    disabled={loading}
+                  />
                   {errors.weight && <div className={styles['error-message']}>{errors.weight}</div>}
                 </div>
               </div>
               <div className={styles['form-group']}>
                 <label htmlFor="goal">Fitness Goal</label>
-                <select id="goal" name="goal" value={formData.goal} onChange={handleChange} className={errors.goal ? styles.error : ''} disabled={loading}>
+                <select
+                  id="goal"
+                  name="goal"
+                  value={formData.goal}
+                  onChange={handleChange}
+                  className={errors.goal ? styles.error : ''}
+                  disabled={loading}
+                >
                   <option value="">Select Goal</option>
                   <option value="Weight Loss">Weight Loss</option>
                   <option value="Muscle Gain">Muscle Gain</option>
                   <option value="Cardiovascular Health">Cardiovascular Health</option>
-                  <option value="Flexibility and Mobility">Flexibility and Mobility</option>
                 </select>
                 {errors.goal && <div className={styles['error-message']}>{errors.goal}</div>}
               </div>
               <div className={styles['form-actions']}>
-                <button type="button" className={styles['btn-back']} onClick={handlePrevious} disabled={loading}>
+                <button
+                  type="button"
+                  className={styles['btn-back']}
+                  onClick={handlePrevious}
+                  disabled={loading}
+                >
                   <i className='bx bx-left-arrow-alt'></i> Back
                 </button>
                 <button type="submit" className={styles['btn-register']} disabled={loading}>

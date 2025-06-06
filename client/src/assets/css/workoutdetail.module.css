@@ -83,6 +83,31 @@ body {
   color: #666;
 }
 
+.header-right select {
+  width: 100%;
+  min-width: 300px;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  text-align: right;
+  font-family: "Poppins", sans-serif;
+  transition: box-shadow 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+}
+
+.header-right select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.7);
+}
+
 .header-right textarea {
   width: 100%;
   min-width: 300px;
@@ -271,17 +296,12 @@ body {
   background: #f0f0f0;
 }
 
-.exercise-item.completed {
-  background: #e8f5e8;
-  border-left: 4px solid #4caf50;
-}
-
-.exercise-image {
+.exercise-video {
   width: 60px;
   height: 60px;
   border-radius: 10px;
-  object-fit: cover;
   flex-shrink: 0;
+  background-color: white;
 }
 
 .exercise-info {
@@ -314,11 +334,6 @@ body {
   flex-shrink: 0;
 }
 
-.exercise-status.completed {
-  background: #4caf50;
-  color: white;
-}
-
 .exercise-status i {
   font-size: 16px;
 }
@@ -328,9 +343,7 @@ body {
   gap: 1rem;
   margin-top: 2rem;
 }
-
-.restart-btn,
-.continue-btn {
+.submit-btn {
   flex: 1;
   padding: 1rem 2rem;
   border-radius: 25px;
@@ -346,23 +359,12 @@ body {
   gap: 0.5rem;
 }
 
-.restart-btn {
-  background: white;
-  color: #03a9f4;
-  border: 2px solid #03a9f4;
-}
-
-.restart-btn:hover {
+.submit-btn {
   background: #03a9f4;
   color: white;
 }
 
-.continue-btn {
-  background: #03a9f4;
-  color: white;
-}
-
-.continue-btn:hover {
+.submit-btn:hover {
   background: #0288d1;
 }
 
@@ -592,18 +594,6 @@ body {
   color: #03A9F4;
 }
 
-.exerciseSelectArrow {
-  color: #ccc;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.exerciseSelectItem:hover .exerciseSelectArrow {
-  color: #03A9F4;
-  transform: translateX(4px);
-}
-
 .searchContainer {
   position: relative;
   margin-bottom: 1.5rem;
@@ -817,8 +807,7 @@ body {
     gap: 0.8rem;
   }
 
-  .restart-btn,
-  .continue-btn {
+  .submit-btn {
     padding: 0.8rem 1.5rem;
     font-size: 0.9rem;
   }

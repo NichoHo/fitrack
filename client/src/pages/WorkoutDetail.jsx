@@ -1,3 +1,4 @@
+// ─── WorkoutDetail.jsx ──────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import styles from "../assets/css/workoutdetail.module.css";
@@ -7,12 +8,22 @@ import DifficultyRating from "../components/DifficultyRating";
 import { supabase } from "../services/supabase";
 
 export default function WorkoutDetail() {
-  const { planid } = useParams();
+  const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const isNew = planid === "new";
-  const isEdit = !isNew && location.pathname.endsWith("/edit");
-  const isView = !isNew && !isEdit;
+
+  // If the URL ends with "/new", or the route param is literally "new", treat as "new".
+  // Otherwise, take planid from params.
+  const rawPlanId = params.planid; // could be undefined for "/workoutdetail/new"
+  const isNew =
+    rawPlanId === "new" || location.pathname.endsWith("/new");
+  // In “new” mode, we'll never fetch from the DB; only insert later.
+  const planid = isNew ? null : rawPlanId; 
+
+  // Edit mode is when there's a numeric/string planid (not null) and URL ends with "/edit"
+  const isEdit = Boolean(!isNew && location.pathname.endsWith("/edit"));
+  // View mode is when there's a numeric/string planid and NOT in edit
+  const isView = Boolean(!isNew && !isEdit);
 
   const [hasChanges, setHasChanges] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
@@ -46,11 +57,13 @@ export default function WorkoutDetail() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasChanges]);
 
-  // Load plan / exercises / log
+  // ─── Load plan / exercises / log ────────────────────────────────────────────────
   useEffect(() => {
     document.title = 'Workout Detail - Fitrack';
     async function load() {
       setLoading(true);
+
+      // 1) Get the logged‐in user
       const {
         data: { user },
         error: authErr,
@@ -58,7 +71,8 @@ export default function WorkoutDetail() {
       if (authErr || !user) return navigate("/login");
       setUserId(user.id);
 
-      if (!isNew) {
+      // 2) Only fetch an existing plan if planid is non-null (i.e. not "new")
+      if (!isNew && planid) {
         // fetch plan
         const { data: planData, error: planErr } = await supabase
           .from("WorkoutPlan")
@@ -66,17 +80,20 @@ export default function WorkoutDetail() {
           .eq("planid", planid)
           .eq("userid", user.id)
           .single();
-        if (planErr) return navigate("/workoutplan");
+        if (planErr) {
+          // if plan does not exist or some error → go back
+         return navigate("/workoutplan");
+       }
         setPlanName(planData.planname);
         setPlanGoal(planData.goal);
         setPlanDescription(planData.description);
         setPlanDifficulty(planData.difficulty);
 
-        // fetch exercises (no planned_ fields anymore)
+        // fetch exercises for that plan
         const { data: exRows, error: exErr } = await supabase
           .from("WorkoutPlanExercise")
           .select(`
-            planid,
+           planid,
             exerciseid,
             exercise_order,
             Exercise (
@@ -94,20 +111,8 @@ export default function WorkoutDetail() {
           .order("exercise_order", { ascending: true });
         if (exErr) console.error("Error fetching plan exercises:", exErr);
         setPlanExercises(exRows || []);
-
-        // if viewing, fetch most recent log
-        if (isView) {
-          const { data: logData } = await supabase
-            .from("WorkoutLog")
-            .select("logid,exercisedone,totalexercise")
-            .eq("planid", planid)
-            .eq("userid", user.id)
-            .order("date", { ascending: false })
-            .limit(1)
-            .single();
-          setLog(logData || null);
-        }
       }
+
       setLoading(false);
     }
     load();
@@ -125,12 +130,6 @@ export default function WorkoutDetail() {
   const handleBack = () => {
     if (hasChanges && !window.confirm("You have unsaved changes. Discard?")) return;
     navigate("/workoutplan");
-  };
-  const handleRestart = () => {
-    navigate(`/workout/${planid}?restart=true`);
-  };
-  const handleContinue = () => {
-    navigate(`/workout/${planid}`);
   };
   const handleStart = () => navigate(`/workout/${planid}?restart=true`);
 
@@ -177,7 +176,7 @@ export default function WorkoutDetail() {
       (ex.description || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // ---- SAVING LOGIC ----
+  // ─── SAVING LOGIC ───────────────────────────────────────────────────────────────
   async function handleSave() {
     setLoading(true);
     try {
@@ -241,8 +240,7 @@ export default function WorkoutDetail() {
       if (exError) throw exError;
 
       setHasChanges(false);
-      // go to view mode
-      navigate(`/workoutdetail/${savedPlanId}`);
+      navigate("/workoutplan");
     } catch (err) {
       console.error("Error saving plan:", err.message);
       alert("Failed to save workout plan: " + err.message);
@@ -302,16 +300,26 @@ export default function WorkoutDetail() {
                     marginBottom: "1rem",
                   }}
                 />
-                <input
-                  type="text"
+                <select
                   value={planGoal}
                   onChange={(e) => {
                     setPlanGoal(e.target.value);
                     markDirty();
                   }}
-                  placeholder="Goal"
-                  style={{ marginBottom: "1rem" }}
-                />
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    marginBottom: "1rem",
+                    fontSize: "1rem",
+                  }}
+                >
+                  <option value="" disabled>
+                    Select Goal
+                  </option>
+                  <option value="Weight Loss">Weight Loss</option>
+                  <option value="Muscle Gain">Muscle Gain</option>
+                  <option value="Cardiovascular Health">Cardiovascular Health</option>
+                </select>
                 <textarea
                   value={planDescription}
                   onChange={(e) => {
@@ -341,18 +349,18 @@ export default function WorkoutDetail() {
           <div className={styles["exercise-list"]}>
             {planExercises.map((pe, idx) => {
               const ex = pe.Exercise;
-              const done = inProgress && doneCount >= pe.exercise_order;
               return (
                 <div
                   key={`${pe.exerciseid}-${idx}`}
-                  className={`${styles["exercise-item"]} ${
-                    done ? styles.completed : ""
-                  }`}
+                  className={styles["exercise-item"]}
                 >
-                  <img
+                  <video
                     src={ex.animationurl}
-                    alt={ex.name}
-                    className={styles["exercise-image"]}
+                    className={styles["exercise-video"]}
+                    muted
+                    loop
+                    autoPlay
+                    playsInline
                   />
                   <div className={styles["exercise-info"]}>
                     <div className={styles["exercise-name"]}>{ex.name}</div>
@@ -379,12 +387,6 @@ export default function WorkoutDetail() {
                     >
                       <i className="bx bx-trash"></i>
                     </button>
-                  )}
-
-                  {done && (
-                    <div className={styles["exercise-status"]}>
-                      <i className="bx bx-check"></i>
-                    </div>
                   )}
                 </div>
               );
@@ -448,10 +450,13 @@ export default function WorkoutDetail() {
                           setSearchTerm("");
                         }}
                       >
-                        <img
+                        <video
                           src={ex.animationurl}
-                          alt={ex.name}
-                          className={styles.exerciseSelectImage}
+                          className={styles["exercise-video"]}
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
                         />
                         <div className={styles.exerciseSelectInfo}>
                           <span className={styles.exerciseName}>{ex.name}</span>
@@ -488,11 +493,12 @@ export default function WorkoutDetail() {
                                 <span>{ex.duration}s</span>
                               </div>
                             )}
+                            <div className={styles.exerciseMetaItem}>
+                              <i className={`bx bxs-flame ${styles.exerciseMetaIcon}`}></i>
+                              <span>{ex.difficulty}</span>
+                            </div>
                           </div>
                         </div>
-                        <i
-                          className={`bx bx-chevron-right ${styles.exerciseSelectArrow}`}
-                        ></i>
                       </li>
                     ))}
                   </ul>
@@ -504,27 +510,12 @@ export default function WorkoutDetail() {
 
         <div className={styles["action-buttons"]}>
           {isNew || isEdit ? (
-            <button className={styles["continue-btn"]} onClick={handleSave}>
+            <button className={styles["submit-btn"]} onClick={handleSave}>
               Save Workout
             </button>
-          ) : inProgress ? (
-            <>
-              <button
-                className={styles["restart-btn"]}
-                onClick={handleRestart}
-              >
-                RESTART
-              </button>
-              <button
-                className={styles["continue-btn"]}
-                onClick={handleContinue}
-              >
-                CONTINUE
-              </button>
-            </>
           ) : (
             <button
-              className={styles["continue-btn"]}
+              className={styles["submit-btn"]}
               onClick={handleStart}
             >
               Start Workout

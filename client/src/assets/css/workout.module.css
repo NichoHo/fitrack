@@ -76,17 +76,17 @@
   font-size: 22px;
 }
 
-.exercise-image-container {
+.exercise-video-container {
   width: 100%;
   display: flex;
   justify-content: center;
   padding: 1rem;
 }
 
-.exercise-image {
-  max-width: 100%;
+.exercise-video {
+  width: 100%;
   max-height: 300px;
-  object-fit: contain;
+  background-color: white;
 }
 
 .divider {
@@ -409,6 +409,18 @@
 
 .feedback-options button:last-child {
   font-size: 2rem;
+}
+
+.feedback-options button.selected {
+  border-color: #03A9F4 !important;
+  background-color: rgba(3, 169, 244, 0.1) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(3, 169, 244, 0.2);
+}
+
+.feedback-options button.selected:hover {
+  border-color: #03A9F4;
+  background-color: rgba(3, 169, 244, 0.2);
 }
 
 .input-group {

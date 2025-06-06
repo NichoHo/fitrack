@@ -53,12 +53,6 @@ const Landing = () => {
       title: "Cardiovascular Health",
       description: "Improve heart health and endurance with cardio workouts that strengthen your cardiovascular system.",
       color: "#45b7d1"
-    },
-    {
-      icon: <Bike className={styles['exercise-icon']} />,
-      title: "Flexibility & Mobility",
-      description: "Enhance range of motion and prevent injuries with yoga, stretching, and mobility exercises.",
-      color: "#96ceb4"
     }
   ];
 

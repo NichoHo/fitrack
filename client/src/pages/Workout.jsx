@@ -5,10 +5,11 @@ import styles from '../assets/css/workout.module.css';
 import { supabase } from '../services/supabase';
 
 export default function Workout() {
+  const [feedback, setFeedback] = useState(null);
   const { planid } = useParams();
   const navigate = useNavigate();
 
-  // ─── Prompt when user tries to close/refresh the browser tab ───
+  // Prompt when user tries to close/refresh the browser tab
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       e.preventDefault();
@@ -99,7 +100,8 @@ export default function Workout() {
             sets,
             reps,
             duration,
-            animationurl
+            animationurl,
+            calories_burned
           )
         `)
         .eq('planid', planid)
@@ -119,6 +121,7 @@ export default function Workout() {
         duration: pe.Exercise.duration,
         completed: false,
         position: pe.exercise_order,
+        calories: pe.Exercise.calories_burned || 0,
       }));
       setExercises(list);
     }
@@ -255,12 +258,9 @@ export default function Workout() {
       // Move to next exercise
       setCurrentExercise((curr) => curr + 1);
     } else {
-      // Last exercise: mark completed and finish
-      const updated = [...exercises];
-      updated[lastIdx].completed = true;
-      setExercises(updated);
-      setCurrentSet(exercises[lastIdx].sets);
-      setIsResting(false);
+      // **CHANGED HERE**:
+      // Instead of forcibly marking the last exercise as completed,
+      // just finish the workout immediately.
       setFinished(true);
     }
   };
@@ -358,9 +358,103 @@ export default function Workout() {
   const totalExercises = exercises.length;
   const elapsedFormatted = formatTime(elapsedTime);
 
+  // ← Sum calories **only** for completed exercises:
+  const totalCalories = exercises
+    .filter((ex) => ex.completed)            // include only done ones
+    .reduce((sum, ex) => sum + (ex.calories || 0), 0)
+    .toFixed(1);
+
   // Ending screen
   if (finished) {
-    const handleFinish = () => navigate('/dashboard');
+    const handleFinish = async () => {
+      // 1. Get the current user’s ID
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('Could not get user:', userError);
+        return;
+      }
+      const userid = user.id;
+
+      // 2. Compute which “weight” to record
+      const weightToSave =
+        weightValue && weightValue !== ''
+          ? parseFloat(weightValue)
+          : parseFloat(userProfile.weight || 0);
+
+      // 3. Compute which “height” to record
+      const heightToSave =
+        heightValue && heightValue !== ''
+          ? parseFloat(heightValue)
+          : parseFloat(userProfile.height || 0);
+
+      // 4. First, update User table with new weight & height
+      const { error: updateUserError } = await supabase
+        .from('User')
+        .update({ weight: weightToSave, height: heightToSave })
+        .eq('id', userid);
+
+      if (updateUserError) {
+        console.error('Error updating user profile:', updateUserError);
+        // you can choose to early‐return here or continue
+      }
+
+      // 5. Prepare the WorkoutLog row
+      const doneCount = exercises.filter((ex) => ex.completed).length;
+      const totalCount = exercises.length;
+      const logPayload = {
+        userid: userid,
+        planid: planid,
+        date: new Date().toISOString(),
+        exercisedone: doneCount,
+        totalexercise: totalCount,
+        feedback: feedback,
+        currentweight: weightToSave,
+        duration_seconds: elapsedTime,
+        calories_burned: parseFloat(totalCalories),
+      };
+
+      // 6. Insert into WorkoutLog
+      const {
+        data: logData,
+        error: logError,
+      } = await supabase
+        .from('WorkoutLog')
+        .insert(logPayload)
+        .select('logid')
+        .single();
+
+      if (logError) {
+        console.error('Error inserting WorkoutLog:', logError);
+        return;
+      }
+
+      const logid = logData.logid;
+
+      // 7. Build and insert WorkoutLogExercise rows
+      const logExercises = exercises
+        .filter((ex) => ex.completed)
+        .map((ex) => ({
+          logid: logid,
+          exerciseid: ex.id,
+          planid: planid,
+        }));
+
+      if (logExercises.length > 0) {
+        const { error: logExError } = await supabase
+          .from('WorkoutLogExercise')
+          .insert(logExercises);
+        if (logExError) {
+          console.error('Error inserting WorkoutLogExercise rows:', logExError);
+          return;
+        }
+      }
+
+      // 8. Finally, navigate away
+      navigate('/dashboard');
+    };
 
     return (
       <div className={styles['ending-container']}>
@@ -376,7 +470,7 @@ export default function Workout() {
           </div>
           <div className={styles['stat-item']}>
             <h3>Calories</h3>
-            <p>0.8</p>
+            <p>{totalCalories}</p>
           </div>
           <div className={styles['stat-item']}>
             <h3>Time</h3>
@@ -387,13 +481,22 @@ export default function Workout() {
         <div className={styles['feedback']}>
           <h3>How do you feel?</h3>
           <div className={styles['feedback-options']}>
-            <button className={styles.tooHard}>
+            <button 
+              className={`${styles.tooHard} ${feedback === 'too_hard' ? styles.selected : ''}`}
+              onClick={() => setFeedback('too_hard')}
+            >
               😣<span>Too hard</span>
             </button>
-            <button className={styles.justRight}>
+            <button 
+              className={`${styles.justRight} ${feedback === 'just_right' ? styles.selected : ''}`}
+              onClick={() => setFeedback('just_right')}
+            >
               😃<span>Just right</span>
             </button>
-            <button className={styles.tooEasy}>
+            <button 
+              className={`${styles.tooEasy} ${feedback === 'too_easy' ? styles.selected : ''}`}
+              onClick={() => setFeedback('too_easy')}
+            >
               😌<span>Too easy</span>
             </button>
           </div>
@@ -457,8 +560,15 @@ export default function Workout() {
           >
             <i className="bx bx-arrow-back"></i>
           </button>
-          <div className={styles['exercise-image-container']}>
-            <img src={ex.image} alt={ex.name} className={styles['exercise-image']} />
+          <div className={styles['exercise-video-container']}>
+            <video
+              src={ex.image}
+              className={styles['exercise-video']}
+              muted
+              loop
+              autoPlay
+              playsInline
+            />
           </div>
         </div>
 
@@ -496,9 +606,7 @@ export default function Workout() {
                   <div className={styles['sets-text']}>
                     Set {currentSet}/{ex.sets}
                   </div>
-                  <div className={styles['duration-timer']}>
-                    {formatTime(exerciseTime)}
-                  </div>
+                  <div className={styles['duration-timer']}>{formatTime(exerciseTime)}</div>
                 </div>
               )}
 
