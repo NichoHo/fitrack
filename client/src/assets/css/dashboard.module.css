@@ -245,6 +245,131 @@ body {
     font-size: 14px;
 }
 
+/* ==================== Weekly Streak Tracker Styles ==================== */
+.all-records-link {
+    color: #4F46E5;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.all-records-link:hover {
+    color: #3730A3;
+}
+
+.weekly-streak-calendar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1.5rem 0;
+    padding: 0 0.5rem;
+}
+
+.week-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.week-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #9CA3AF;
+}
+
+.week-number {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #6B7280;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.week-circle {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.week-circle.completed {
+    background-color: #4F46E5;
+    color: white;
+}
+
+.week-circle.completed i {
+    font-size: 1.25rem;
+}
+
+.week-circle.current {
+    background-color: #1F2937;
+    color: white;
+    position: relative;
+}
+
+.week-circle.current::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background-color: #1F2937;
+    border-radius: 50%;
+}
+
+.streak-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #E5E7EB;
+}
+
+.streak-badge {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #FFC107, #FF9800);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.streak-badge i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.streak-info {
+    flex: 1;
+}
+
+.streak-current {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1F2937;
+    margin: 0 0 0.25rem 0;
+}
+
 /* Tablet (768px - 1024px) */
 @media (max-width: 1024px) {
     .top-row, .bottom-row {
