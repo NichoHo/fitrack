@@ -247,7 +247,7 @@ body {
 
 /* ==================== Weekly Streak Tracker Styles ==================== */
 .all-records-link {
-    color: #4F46E5;
+    color: #03A9F4;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
@@ -258,7 +258,7 @@ body {
 }
 
 .all-records-link:hover {
-    color: #3730A3;
+    color: #0288d1;
 }
 
 .weekly-streak-calendar {
@@ -309,7 +309,7 @@ body {
 }
 
 .week-circle.completed {
-    background-color: #4F46E5;
+    background-color: #03A9F4;
     color: white;
 }
 

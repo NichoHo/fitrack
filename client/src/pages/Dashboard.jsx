@@ -31,6 +31,9 @@ ChartJS.register(
 export default function Dashboard() {
   const [isOpen, setIsOpen] = useState(true);
 
+  const [weeklyStreakData, setWeeklyStreakData] = useState([]);
+  const [streakCount, setStreakCount] = useState(0);
+
   // ─── Weekly Report State ────────────────────────────────────────────────────
   const [weeklyWorkoutsCount, setWeeklyWorkoutsCount] = useState(0);
   const [weeklyCalories, setWeeklyCalories] = useState(0);
@@ -108,6 +111,74 @@ export default function Dashboard() {
         console.error("Error fetching weekly logs:", weeklyError);
       } else if (thisWeekLogs) {
         setWeeklyWorkoutsCount(thisWeekLogs.length);
+
+        const buildWeeklyStreak = () => {
+          // 1) Compute Monday…Sunday of this week in local time
+          const today = new Date();
+          today.setHours(0,0,0,0);
+
+          const dow       = today.getDay();              // 0=Sun,1=Mon…6=Sat
+          const mondayOff = dow === 0 ? -6 : 1 - dow;
+          const monday    = new Date(today);
+          monday.setDate(today.getDate() + mondayOff);
+
+          // 2) Make a helper to turn any Date into "YYYY-MM-DD"
+          const toKey = d => {
+            const Y = d.getFullYear();
+            const M = String(d.getMonth()+1).padStart(2,'0');
+            const D = String(d.getDate()).padStart(2,'0');
+            return `${Y}-${M}-${D}`;
+          };
+
+          // 3) Build a Set of the days you actually have logs for
+          const loggedDates = new Set(
+            thisWeekLogs.map(l => {
+              const dt = new Date(l.date);
+              dt.setHours(0,0,0,0);
+              return toKey(dt);
+            })
+          );
+
+          const todayKey = toKey(today);
+
+          // 4) Build your 7-day array
+          const weekArray = [];
+          let currentIdx = -1;
+
+          for (let i = 0; i < 7; i++) {
+            const d   = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            d.setHours(0,0,0,0);
+
+            const key  = toKey(d);
+            const lbl  = d.toLocaleDateString('default',{ weekday:'short' });
+            let   status = 'future';
+
+            if (key === todayKey) {
+              // today: completed if you have any log
+              status = loggedDates.has(key) ? 'completed' : 'current';
+              currentIdx = i;
+            } else if (loggedDates.has(key)) {
+              // any other logged day
+              status = 'completed';
+            }
+
+            weekArray.push({ date:d, dayLabel:lbl, status, dateKey:key });
+          }
+
+          // 5) Compute your consecutive‐day streak
+          let streak = 0;
+          if (weekArray[currentIdx]?.status === 'completed') streak++;
+          for (let j = currentIdx - 1; j >= 0; j--) {
+            if (weekArray[j].status === 'completed') streak++;
+            else break;
+          }
+
+          setWeeklyStreakData(weekArray);
+          setStreakCount(streak);
+        };
+
+        buildWeeklyStreak();
 
         const totalCals = thisWeekLogs.reduce(
           (sum, row) => sum + parseFloat(row.calories_burned || 0),
@@ -197,8 +268,8 @@ export default function Dashboard() {
         data: weightHistory.map((p) => p.weight),
         fill: false,
         tension: 0.2,
-        borderColor: "#3b82f6",
-        backgroundColor: "#3b82f6",
+        borderColor: "#03A9F4",
+        backgroundColor: "#03A9F4",
         pointRadius: 3,
         pointHoverRadius: 6,
       },
@@ -432,70 +503,38 @@ export default function Dashboard() {
               </a>
             </div>
 
-            {/* Simplified Weekly Progress */}
+            {/* Weekly view */}
             <div className={styles["weekly-streak-calendar"]}>
-              {/* Day 1 - Completed */}
-              <div className={styles["week-column"]}>
-                <div className={styles["week-label"]}>Mon</div>
-                <div
-                  className={`${styles["week-circle"]} ${styles["completed"]}`}
-                >
-                  <i className="bx bx-check"></i>
+              {weeklyStreakData.map((day, idx) => (
+                <div className={styles["week-column"]} key={idx}>
+                  <div className={styles["week-label"]}>{day.dayLabel}</div>
+
+                  {day.status === "completed" ? (
+                    <div className={`${styles["week-circle"]} ${styles["completed"]}`}>
+                      <i className="bx bx-check"></i>
+                    </div>
+                  ) : day.status === "current" ? (
+                    <div className={`${styles["week-circle"]} ${styles["current"]}`}>
+                      {day.date.getDate()}
+                    </div>
+                  ) : (
+                    <div className={styles["week-number"]}>
+                      {day.date.getDate()}
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Day 2 - Completed */}
-              <div className={styles["week-column"]}>
-                <div className={styles["week-label"]}>Tue</div>
-                <div
-                  className={`${styles["week-circle"]} ${styles["completed"]}`}
-                >
-                  <i className="bx bx-check"></i>
-                </div>
-              </div>
-
-              {/* Day 3 - In Progress */}
-              <div className={styles["week-column"]}>
-                <div className={styles["week-label"]}>Wed</div>
-                <div
-                  className={`${styles["week-circle"]} ${styles["current"]}`}
-                >
-                  3
-                </div>
-              </div>
-
-              {/* Day 4 - Future */}
-              <div className={styles["week-column"]}>
-                <div className={styles["week-label"]}>Thu</div>
-                <div className={styles["week-number"]}>4</div>
-              </div>
-
-              {/* Day 5 - Future */}
-              <div className={styles["week-column"]}>
-                <div className={styles["week-label"]}>Fri</div>
-                <div className={styles["week-number"]}>5</div>
-              </div>
-
-              {/* Day 6 - Future */}
-              <div className={styles["week-column"]}>
-                <div className={styles["week-label"]}>Sat</div>
-                <div className={styles["week-number"]}>6</div>
-              </div>
-
-              {/* Day 7 - Future */}
-              <div className={styles["week-column"]}>
-                <div className={styles["week-label"]}>Sun</div>
-                <div className={styles["week-number"]}>7</div>
-              </div>
+              ))}
             </div>
 
-            {/* Streak Stats */}
+            {/* Dynamic streak count */}
             <div className={styles["streak-stats"]}>
               <div className={styles["streak-badge"]}>
                 <i className="bx bxs-medal"></i>
               </div>
               <div className={styles["streak-info"]}>
-                <h3 className={styles["streak-current"]}>2-week streak</h3>
+                <h3 className={styles["streak-current"]}>
+                  {streakCount}-week streak
+                </h3>
               </div>
             </div>
           </div>
