@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import styles from '../assets/css/sidebar.module.css';
 import logo from '../assets/img/logo.png';
 
@@ -9,8 +11,17 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     setShowDropup(!showDropup);
   };
 
-  return (
-    <nav className={`${styles.sidebar} ${!isOpen ? styles.close : ''}`}>
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    await signOut();
+    navigate('/landing');
+  };
+
+   return (
+     <nav className={`${styles.sidebar} ${!isOpen ? styles.close : ''}`}>
       <header>
         <div className={styles['nav-image-text']}>
           <img className={styles['nav-image']} src={logo} alt="Fitrack Logo" />
@@ -67,7 +78,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                     </a>
                   </li>
                   <li>
-                    <a href="/logout">
+                    <a href="#" onClick={handleLogout}>
                       <i className="bx bx-log-out icon" />
                       <span>Log Out</span>
                     </a>
@@ -87,7 +98,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               </a>
             </li>
             <li>
-              <a href="/logout">
+              <a href="#" onClick={handleLogout}>
                 <i className="bx bx-log-out icon" />
                 {isOpen && <span className={styles['nav-text']}>Log Out</span>}
               </a>

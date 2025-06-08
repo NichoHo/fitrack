@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('AuthContext: Initial session user:', session?.user);
       setUser(session?.user ?? null);
       setLoading(false);
     };
@@ -18,6 +19,7 @@ export function AuthProvider({ children }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('AuthContext: Auth state changed. Event:', event, 'Session user:', session?.user);
         setUser(session?.user ?? null);
         setLoading(false);
       }
@@ -30,8 +32,16 @@ export function AuthProvider({ children }) {
 
   const value = {
     signUp: (data) => supabase.auth.signUp(data),
-    signIn: (data) => supabase.auth.signInWithPassword(data),
-    signOut: () => supabase.auth.signOut(),
+    signIn: async (data) => {
+      const response = await supabase.auth.signInWithPassword(data);
+      console.log('AuthContext: Sign In attempt. User:', response.data.user, 'Error:', response.error);
+      return response;
+    },
+    signOut: async () => {
+      const response = await supabase.auth.signOut();
+      console.log('AuthContext: Sign Out attempt. Error:', response.error);
+      return response;
+    },
     user,
     loading,
   };

@@ -11,10 +11,15 @@ export async function fetchWorkoutHistory(userId) {
       .from('WorkoutLog')
       .select(`
         *,
+        WorkoutPlan (
+          planname
+        ),
         WorkoutLogExercise (
           *,
           Exercise (
-            name
+            name,
+            sets,
+            reps
           )
         )
       `)
