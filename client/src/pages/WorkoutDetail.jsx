@@ -261,7 +261,7 @@ export default function WorkoutDetail() {
   }
 
   return (
-    <div>
+    <div className={isOpen ? styles.appContainer : styles.appContainerClosed}>
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className={styles["workout-detail-container"]}>

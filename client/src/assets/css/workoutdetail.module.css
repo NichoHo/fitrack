@@ -18,7 +18,11 @@ body {
   min-height: 100vh;
 }
 
-.sidebar.close ~ .workout-detail-container {
+.appContainer .workout-detail-container {
+  margin-left: 15rem;
+}
+
+.appContainerClosed .workout-detail-container {
   margin-left: 5rem;
 }
 
