@@ -18,38 +18,6 @@ export default function History() {
   useEffect(() => {
     document.title = 'History - Fitrack';
 
-    // Sample workout data for testing
-    const sampleData = [
-      {
-        id: '4bf3653e-dacd-4b41-861b-9cc6bd85a0a5',
-        email: 'nicovalerian2@gmail.com',
-        date: '2025-06-02T10:00:00Z',
-        name: 'Morning Workout',
-        duration_seconds: 3600,
-        calories_burned: 400,
-        WorkoutLogExercise: [
-          { Exercises: { name: 'Squats' }, sets: 3, reps: 12, weight: 50 },
-          { Exercises: { name: 'Push-ups' }, sets: 3, reps: 15 }
-        ]
-      },
-      {
-        id: '4bf3653e-dacd-4b41-861b-9cc6bd85a0a5',
-        email: 'nicovalerian2@gmail.com',
-        date: '2025-06-03T18:30:00Z',
-        name: 'Evening Workout',
-        duration_seconds: 2700,
-        calories_burned: 350,
-        WorkoutLogExercise: [
-          { Exercises: { name: 'Running' }, sets: 1, reps: 1, weight: 0 },
-          { Exercises: { name: 'Pull-ups' }, sets: 3, reps: 8 }
-        ]
-      }
-    ];
-
-    // For testing, use sample data instead of API call
-    processHistory(sampleData);
-    return;
-
     async function fetchLogs() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) {
@@ -108,8 +76,8 @@ export default function History() {
       // Use allWorkoutLogsByDate to get workouts for the selected date
       const workoutsForSelectedDate = allWorkoutLogsByDate[formattedSelectedDate] || [];
       const processedWorkouts = workoutsForSelectedDate.map(log => ({
-        name: log.name, // Assuming WorkoutLog has a name field
-        duration: new Date((log.duration_seconds || 0) * 1000).toISOString().substr(14, 5),
+       name: log.WorkoutPlan.planname,
+       duration: new Date((log.duration_seconds || 0) * 1000).toISOString().substr(14, 5),
         calories: log.calories_burned || 0,
         date: new Date(log.date).toLocaleString('default', {
           month: 'short',
@@ -118,9 +86,9 @@ export default function History() {
           minute: '2-digit'
         }),
         exercises: log.WorkoutLogExercise.map(ex => ({
-          name: ex.Exercises.name,
-          sets: ex.sets,
-          reps: ex.reps,
+          name: ex.Exercise.name,
+          sets: ex.Exercise.sets,
+          reps: ex.Exercise.reps,
           weight: ex.weight
         }))
       }));
