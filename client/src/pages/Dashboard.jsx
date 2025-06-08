@@ -1,4 +1,3 @@
-// Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import styles from "../assets/css/dashboard.module.css";
 import "boxicons/css/boxicons.min.css";
@@ -66,7 +65,7 @@ export default function Dashboard() {
     return () => window.removeEventListener("resize", onResize);
   }, [isOpen]);
 
-  // ─── Fetch Weekly + All‐Time Logs ────────────────────────────────────────────
+  // ─── Fetch Dashboard Data ───────────────────────────────────────────────────
   useEffect(() => {
     async function fetchDashboardData() {
       // 1) Who's logged in?
@@ -74,20 +73,18 @@ export default function Dashboard() {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-
       if (authError || !user) {
         console.error("No logged-in user:", authError);
         return;
       }
       const userId = user.id;
 
-      // 2) Get the user's height & (latest) weight from "User" table
+      // 2) Get the user's height & (latest) weight
       const { data: userProfile, error: profileError } = await supabase
         .from("User")
         .select("weight, height")
         .eq("id", userId)
         .single();
-
       if (profileError) {
         console.error("Error loading user profile:", profileError);
       } else if (userProfile) {
@@ -95,133 +92,132 @@ export default function Dashboard() {
         setHeightCm(userProfile.height);
       }
 
-      // 3) Compute one‐week‐ago timestamp
+      // ─── Prepare helper to YYYY-MM-DD ─────────────────────────
+      const toDateKey = (d) => {
+        const Y = d.getFullYear();
+        const M = String(d.getMonth() + 1).padStart(2, "0");
+        const D = String(d.getDate()).padStart(2, "0");
+        return `${Y}-${M}-${D}`;
+      };
+
+      // ─── Fetch logs for weekly‐streak calculation ────────────────
+      const oneYearAgo = new Date(
+        Date.now() - 52 * 7 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const { data: streakLogs, error: streakError } = await supabase
+        .from("WorkoutLog")
+        .select("date")
+        .eq("userid", userId)
+        .gte("date", oneYearAgo);
+      if (streakError) {
+        console.error("Error fetching logs for streak:", streakError);
+      }
+
+      // ─── Compute one‐week‐ago timestamp & fetch this week's logs ────
       const oneWeekAgo = new Date(
         Date.now() - 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-
-      // 4) Fetch all WorkoutLog rows from the last 7 days
       const { data: thisWeekLogs, error: weeklyError } = await supabase
         .from("WorkoutLog")
         .select("calories_burned, duration_seconds, currentweight, date")
         .eq("userid", userId)
         .gte("date", oneWeekAgo);
-
       if (weeklyError) {
         console.error("Error fetching weekly logs:", weeklyError);
       } else if (thisWeekLogs) {
+        // Weekly counts
         setWeeklyWorkoutsCount(thisWeekLogs.length);
-
-        const buildWeeklyStreak = () => {
-          // 1) Compute Monday…Sunday of this week in local time
-          const today = new Date();
-          today.setHours(0,0,0,0);
-
-          const dow       = today.getDay();              // 0=Sun,1=Mon…6=Sat
-          const mondayOff = dow === 0 ? -6 : 1 - dow;
-          const monday    = new Date(today);
-          monday.setDate(today.getDate() + mondayOff);
-
-          // 2) Make a helper to turn any Date into "YYYY-MM-DD"
-          const toKey = d => {
-            const Y = d.getFullYear();
-            const M = String(d.getMonth()+1).padStart(2,'0');
-            const D = String(d.getDate()).padStart(2,'0');
-            return `${Y}-${M}-${D}`;
-          };
-
-          // 3) Build a Set of the days you actually have logs for
-          const loggedDates = new Set(
-            thisWeekLogs.map(l => {
-              const dt = new Date(l.date);
-              dt.setHours(0,0,0,0);
-              return toKey(dt);
-            })
-          );
-
-          const todayKey = toKey(today);
-
-          // 4) Build your 7-day array
-          const weekArray = [];
-          let currentIdx = -1;
-
-          for (let i = 0; i < 7; i++) {
-            const d   = new Date(monday);
-            d.setDate(monday.getDate() + i);
-            d.setHours(0,0,0,0);
-
-            const key  = toKey(d);
-            const lbl  = d.toLocaleDateString('default',{ weekday:'short' });
-            let   status = 'future';
-
-            if (key === todayKey) {
-              // today: completed if you have any log
-              status = loggedDates.has(key) ? 'completed' : 'current';
-              currentIdx = i;
-            } else if (loggedDates.has(key)) {
-              // any other logged day
-              status = 'completed';
-            }
-
-            weekArray.push({ date:d, dayLabel:lbl, status, dateKey:key });
-          }
-
-          // 5) Compute your consecutive‐day streak
-          let streak = 0;
-          if (weekArray[currentIdx]?.status === 'completed') streak++;
-          for (let j = currentIdx - 1; j >= 0; j--) {
-            if (weekArray[j].status === 'completed') streak++;
-            else break;
-          }
-
-          setWeeklyStreakData(weekArray);
-          setStreakCount(streak);
-        };
-
-        buildWeeklyStreak();
-
         const totalCals = thisWeekLogs.reduce(
           (sum, row) => sum + parseFloat(row.calories_burned || 0),
           0
         );
         setWeeklyCalories(totalCals.toFixed(1));
-
         const totalSecs = thisWeekLogs.reduce(
           (sum, row) => sum + parseInt(row.duration_seconds || 0, 10),
           0
         );
         setWeeklyDurationSeconds(totalSecs);
+
+        // ─── Build this week's daily calendar ───────────────
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dow = today.getDay(); // 0=Sun,1=Mon…6=Sat
+        const mondayOff = dow === 0 ? -6 : 1 - dow;
+        const monday = new Date(today);
+        monday.setDate(today.getDate() + mondayOff);
+
+        const loggedDates = new Set(
+          thisWeekLogs.map((l) => {
+            const dt = new Date(l.date);
+            dt.setHours(0, 0, 0, 0);
+            return toDateKey(dt);
+          })
+        );
+        const todayKey = toDateKey(today);
+
+        const weekArray = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(monday);
+          d.setDate(monday.getDate() + i);
+          d.setHours(0, 0, 0, 0);
+          const key = toDateKey(d);
+          const lbl = d.toLocaleDateString("default", { weekday: "short" });
+          let status = "future";
+          if (key === todayKey) {
+            status = loggedDates.has(key) ? "completed" : "current";
+          } else if (loggedDates.has(key)) {
+            status = "completed";
+          }
+          weekArray.push({ date: d, dayLabel: lbl, status, dateKey: key });
+        }
+        setWeeklyStreakData(weekArray);
+
+        // ─── Compute weekly streak (consecutive weeks with ≥1 workout) ──
+        if (streakLogs) {
+          // Build a set of each week's Monday key
+          const weekKeys = new Set(
+            streakLogs.map((l) => {
+              const dt = new Date(l.date);
+              dt.setHours(0, 0, 0, 0);
+              const dwd = dt.getDay();
+              const mngOff = dwd === 0 ? -6 : 1 - dwd;
+              const mng = new Date(dt);
+              mng.setDate(dt.getDate() + mngOff);
+              return toDateKey(mng);
+            })
+          );
+          let streakWeeks = 0;
+          let weekStart = new Date(monday);
+          while (weekKeys.has(toDateKey(weekStart))) {
+            streakWeeks++;
+            weekStart.setDate(weekStart.getDate() - 7);
+          }
+          setStreakCount(streakWeeks);
+        } else {
+          setStreakCount(0);
+        }
       }
 
-      // 5) Fetch ALL WorkoutLog rows (to build weight history)
+      // ─── Fetch ALL logs for weight history ─────────────────────────────
       const { data: allLogs, error: allLogsError } = await supabase
         .from("WorkoutLog")
         .select("currentweight, date")
         .eq("userid", userId)
         .order("date", { ascending: true });
-
       if (allLogsError) {
-        console.error(
-          "Error fetching all logs for weight history:",
-          allLogsError
-        );
+        console.error("Error fetching all logs for weight history:", allLogsError);
       } else if (allLogs && allLogs.length > 0) {
-        // Build an array of { date, weight } from each row (filter NaN)
         const parsedHistory = allLogs
           .map((row) => {
             const w = parseFloat(row.currentweight || 0);
             return isNaN(w) ? null : { date: row.date, weight: w };
           })
-          .filter((entry) => entry !== null);
-
+          .filter((e) => e !== null);
         if (parsedHistory.length) {
           setWeightHistory(parsedHistory);
-
           const weightsOnly = parsedHistory.map((e) => e.weight);
           setHeaviestWeight(Math.max(...weightsOnly));
           setLightestWeight(Math.min(...weightsOnly));
-
-          // If User table’s weight was null, fallback to last log’s weight
           if (userProfile.weight == null) {
             setCurrentWeight(parsedHistory[parsedHistory.length - 1].weight);
           }
@@ -239,7 +235,6 @@ export default function Dashboard() {
       const bmi = currentWeight / (heightMeters * heightMeters);
       const rounded = parseFloat(bmi.toFixed(1));
       setBmiValue(rounded);
-
       let statusLabel = "";
       if (rounded < 18.5) statusLabel = "Underweight";
       else if (rounded < 24.9) statusLabel = "Normal";

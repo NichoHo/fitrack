@@ -2,7 +2,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 200px;
+    width: 225px;
     height: 100%;
     background: #ffffff;
     padding: 1rem;
@@ -11,7 +11,7 @@
 }
 
 .sidebar.close {
-    width: 50px;
+    width: 75px;
 }
 
 .sidebar header {
@@ -164,10 +164,6 @@
 }
 
 /* Bottom Logout */
-.nav-bottom-content {
-    margin-bottom: 1rem;
-}
-
 .nav-bottom-content a {
     display: flex;
     align-items: center;

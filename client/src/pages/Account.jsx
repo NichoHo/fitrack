@@ -139,7 +139,7 @@ export default function Account() {
   };
 
   return (
-    <div className={styles['dashboard-wrapper']}>
+    <div className={`${styles["dashboard-wrapper"]} ${!isOpen ? styles["sidebar-closed"] : ""}`}>
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
       <section className={styles.home}>
         <div className={styles['account-container']}>

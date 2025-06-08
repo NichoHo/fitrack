@@ -4,7 +4,7 @@
     margin-left: 15rem;
 }
 
-.sidebar.close ~ .home {
+.dashboard-wrapper.sidebar-closed .home {
     margin-left: 5rem;
 }
 
