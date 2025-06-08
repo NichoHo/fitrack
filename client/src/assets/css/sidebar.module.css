@@ -277,6 +277,10 @@
     .mobile-dropup {
         width: 115px;
     }
+
+    .mobile-dropup span {
+        font-size: 0.75rem;
+    }
 }
 
 /* Mobile Large (481px - 767px): bottom navbar */

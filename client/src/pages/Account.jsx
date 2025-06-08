@@ -79,6 +79,7 @@ export default function Account() {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setErrorMessage('');
     setSuccessMessage('');
 
@@ -104,12 +105,12 @@ export default function Account() {
       setErrorMessage(error.message);
     } else {
       setSuccessMessage('Profile updated successfully');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setErrorMessage('');
     setSuccessMessage('');
 
@@ -134,7 +135,6 @@ export default function Account() {
       setErrorMessage(error.message);
     } else {
       setSuccessMessage('Password updated successfully');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

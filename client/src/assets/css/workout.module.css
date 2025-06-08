@@ -5,6 +5,7 @@
   background-color: #e4e9f7;
   padding: 1rem;
   font-family: 'Poppins', sans-serif;
+  align-items: center;
 }
 
 .progress-dots {
@@ -558,6 +559,10 @@
   }
 
   @media (max-width: 768px) {
+    .workout-content {
+      width: 90%;
+    }
+
     .ending-container {
       padding: 0 2rem;
     }

@@ -105,6 +105,8 @@ body {
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 1rem;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .header-right select:focus {
@@ -702,6 +704,10 @@ body {
 }
 
 @media (max-width: 768px) {
+  .appContainer .workout-detail-container {
+    margin-left: 0;
+  }
+  
   .workout-detail-container {
     margin-left: 0;
     padding: 1rem;
@@ -783,7 +789,6 @@ body {
   }
   
   .exerciseMeta {
-    flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
@@ -805,6 +810,10 @@ body {
 
   .exercise-name {
     font-size: 1rem;
+  }
+
+  .exerciseMetaItem {
+    font-size: 0.6rem;
   }
 
   .action-buttons {
