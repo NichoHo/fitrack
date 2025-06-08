@@ -12,7 +12,7 @@
   transition: all 0.3s ease;
 }
 
-.sidebar.close ~ .history-content {
+.history-content.sidebar-closed {
   margin-left: 6.5rem;
 }
 

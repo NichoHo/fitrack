@@ -137,13 +137,13 @@ const WorkoutPlan = () => {
   return (
     <div>
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-      <div className={styles["workout-plan-header"]}>
+      <div className={`${styles["workout-plan-header"]} ${!isOpen ? styles["sidebar-closed"] : ""}`}>
         <h1>Workout Plan</h1>
         <button className={styles["add-new-btn"]} onClick={handleAddNew}>
           <i className="bx bx-plus"></i> Add New
         </button>
       </div>
-      <div className={styles["workout-cards-container"]}>
+      <div className={`${styles["workout-cards-container"]} ${!isOpen ? styles["sidebar-closed"] : ""}`}>
         {loading && <p>Loading workout plans...</p>}
         {!loading && plans.length === 0 && <p>No workout plans found.</p>}
         {!loading &&

@@ -293,7 +293,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className={styles["dashboard-wrapper"]}>
+    <div className={`${styles["dashboard-wrapper"]} ${!isOpen ? styles["sidebar-closed"] : ""}`}>
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <section className={styles.home}>

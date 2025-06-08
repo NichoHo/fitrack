@@ -15,7 +15,7 @@ body {
     margin-left: 15rem;
 }
 
-.sidebar.close ~ .home {
+.dashboard-wrapper.sidebar-closed .home {
     margin-left: 5rem;
 }
 
@@ -370,43 +370,90 @@ body {
     margin: 0 0 0.25rem 0;
 }
 
-/* Tablet (768px - 1024px) */
-@media (max-width: 1024px) {
+/* Large screens - Stack vertically from 1025px to 1400px */
+@media (max-width: 1400px) and (min-width: 1025px) {
     .top-row, .bottom-row {
-      flex-direction: column;
+        flex-direction: column;
+        gap: 1.5rem;
     }
 
     .top-row {
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
     }
   
     .home {
-      padding: 2rem;
+        padding: 2rem;
     }
 
     .section {
-        margin-bottom: 0rem;
+        margin-bottom: 1rem;
     }
 
     .reports {
         flex-direction: row;
         justify-content: space-between;
+        gap: 1rem;
     }
 
     .report-card {
         flex-direction: column;
         text-align: center;
-        gap: 0;
+        gap: 0.25rem;
+        padding: 1rem 0.75rem;
     }
 
     .report-card h3 {
-        margin-block-start: 0.25em;
-        margin-block-end: 0.25em;
+        margin: 0.25rem 0;
+        font-size: 1.5rem;
     }
 
     .report-card p {
-        margin-block-start: 0;
-        margin-block-end: 0;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    .report-icon {
+        font-size: 28px;
+    }
+}
+
+/* Tablet (768px - 1024px) - Stack vertically */
+@media (max-width: 1024px) and (min-width: 500px) {
+    .top-row, .bottom-row {
+        flex-direction: column;
+    }
+
+    .top-row {
+        margin-bottom: 1rem;
+    }
+  
+    .home {
+        padding: 2rem;
+    }
+
+    .section {
+        margin-bottom: 1rem;
+    }
+
+    .reports {
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .report-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.25rem;
+        padding: 1rem 0.5rem;
+    }
+
+    .report-card h3 {
+        margin: 0.25rem 0;
+    }
+
+    .report-card p {
+        margin: 0;
     }
 }
   
@@ -417,7 +464,7 @@ body {
       padding: 2rem 3rem 5rem;
     }
 
-    .sidebar.close ~ .home {
+    .dashboard-wrapper.sidebar-closed .home {
         margin-left: 0;
         padding: 2rem 3rem 5rem;
     }
@@ -471,7 +518,7 @@ body {
         padding: 2rem 1rem 5rem;
       }
 
-    .sidebar.close ~ .home {
+    .dashboard-wrapper.sidebar-closed .home {
         margin-left: 0;
         padding: 2rem 1rem 5rem;
     }
