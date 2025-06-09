@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import styles from '../assets/css/register.module.css';
 import 'boxicons/css/boxicons.min.css';
 import logo from '../assets/img/logo.png';
-import { supabase } from '../services/supabase';
+import { supabase, fetchPlanExercises } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Register() {
@@ -78,7 +78,24 @@ export default function Register() {
     setErrors({});
 
     try {
-      // 1) Create the new user via Supabase Auth
+      // Fetch template exercises before user creation
+      const [
+        fatBurnerExercises,
+        muscleBuilderExercises,
+        cardioBoostExercises
+      ] = await Promise.all([
+        fetchPlanExercises(1), // Plan ID for Fat Burner
+        fetchPlanExercises(2), // Plan ID for Muscle Builder
+        fetchPlanExercises(3)  // Plan ID for Cardio Boost
+      ]);
+
+      if (!fatBurnerExercises || !muscleBuilderExercises || !cardioBoostExercises) {
+        setGeneralError('Failed to load default workout plan templates. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Create the new user via Supabase Auth
       const { data: authData, error: authError } = await signUp({
         email: formData.email,
         password: formData.password,
@@ -137,48 +154,40 @@ export default function Register() {
       const { data: insertedPlans, error: planInsertError } = await supabase
         .from('WorkoutPlan')
         .insert(defaultPlans)
-        .select('planid'); 
-      // --> `insertedPlans` will be an array like: [ { planid: 7 }, { planid: 8 }, { planid: 9 } ]
+        .select('planid, planname'); // Also select planname to match correctly
 
       if (planInsertError) {
         console.error('Error inserting default plans:', planInsertError);
-        // We do not abort the whole flow if plans fail—still consider the user created. 
-        // However, you can choose to show an error message here if you prefer:
-        // setGeneralError('Account created, but failed to add default workout plans.');
+        setGeneralError('Account created, but failed to add default workout plans.');
         setSubmitted(true);
         setLoading(false);
         return;
       }
 
       // 3) Build and insert the corresponding WorkoutPlanExercise rows
-      //    The JSON you provided maps exactly to each plan’s exercises.
-      //    We must match `insertedPlans[0].planid` → exercises for “Fat Burner” and so on.
-      const planExercises = [
-        // For "Fat Burner"  (insertedPlans[0])
-        { planid: insertedPlans[0].planid, exerciseid: 78, exercise_order: 1 },
-        { planid: insertedPlans[0].planid, exerciseid: 79, exercise_order: 2 },
-        { planid: insertedPlans[0].planid, exerciseid: 80, exercise_order: 3 },
-        { planid: insertedPlans[0].planid, exerciseid: 73, exercise_order: 4 },
-        { planid: insertedPlans[0].planid, exerciseid: 77, exercise_order: 5 },
+      const allNewPlanExercises = [];
 
-        // For "Muscle Builder" (insertedPlans[1])
-        { planid: insertedPlans[1].planid, exerciseid: 49, exercise_order: 1 },
-        { planid: insertedPlans[1].planid, exerciseid: 58, exercise_order: 2 },
-        { planid: insertedPlans[1].planid, exerciseid: 67, exercise_order: 3 },
-        { planid: insertedPlans[1].planid, exerciseid: 62, exercise_order: 4 },
-        { planid: insertedPlans[1].planid, exerciseid: 59, exercise_order: 5 },
+      // Map template exercises to new plan IDs
+      const mapAndAddExercises = (templateExercises, newPlanName) => {
+        const newPlan = insertedPlans.find(p => p.planname === newPlanName);
+        if (newPlan) {
+          templateExercises.forEach(ex => {
+            allNewPlanExercises.push({
+              planid: newPlan.planid,
+              exerciseid: ex.exerciseid,
+              exercise_order: ex.exercise_order
+            });
+          });
+        }
+      };
 
-        // For "Cardio Boost" (insertedPlans[2])
-        { planid: insertedPlans[2].planid, exerciseid: 78, exercise_order: 1 },
-        { planid: insertedPlans[2].planid, exerciseid: 79, exercise_order: 2 },
-        { planid: insertedPlans[2].planid, exerciseid: 81, exercise_order: 3 },
-        { planid: insertedPlans[2].planid, exerciseid: 82, exercise_order: 4 },
-        { planid: insertedPlans[2].planid, exerciseid: 80, exercise_order: 5 }
-      ];
-
+      mapAndAddExercises(fatBurnerExercises, 'Fat Burner');
+      mapAndAddExercises(muscleBuilderExercises, 'Muscle Builder');
+      mapAndAddExercises(cardioBoostExercises, 'Cardio Boost');
+      
       const { error: planExInsertError } = await supabase
         .from('WorkoutPlanExercise')
-        .insert(planExercises);
+        .insert(allNewPlanExercises);
 
       if (planExInsertError) {
         console.error('Error inserting default plan exercises:', planExInsertError);
