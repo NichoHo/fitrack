@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import styles from '../assets/css/register.module.css';
 import 'boxicons/css/boxicons.min.css';
 import logo from '../assets/img/logo.png';
-import { supabase, fetchPlanExercises } from '../services/supabase';
+import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Register() {
@@ -24,8 +24,77 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
 
+const DEFAULT_WORKOUT_PLANS = {
+  "Fat Burner": {
+    "id": 1,
+    "planname": "Fat Burner",
+    "description": "A mix of cardio and core exercises to aid fat loss.",
+    "difficulty": 4,
+    "goal": "Weight Loss",
+    "exercises": [
+      { "exerciseid": 42, "name": "Barbell Bicep Curl", "description": "Strengthens the biceps by curling a barbell from waist to shoulder level.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/bicep%20curl.mp4", "calories_burned": 14 },
+      { "exerciseid": 43, "name": "Dumbbell Hammer Curl", "description": "Targets both the biceps and forearms using a neutral grip with dumbbells.", "sets": 3, "reps": 10, "duration": null, "resttime": 45, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/hammer%20curl.mp4", "calories_burned": 15 },
+      { "exerciseid": 44, "name": "Preacher Curl (Machine)", "description": "Isolates the biceps on a preacher bench using a machine for controlled motion.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/preacher%20curl.mp4", "calories_burned": 11 },
+      { "exerciseid": 45, "name": "Cable Bicep Curl", "description": "Provides constant tension on biceps using cable pulley system.", "sets": 3, "reps": 15, "duration": null, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/cable%20bicep%20curl.mp4", "calories_burned": 22 },
+      { "exerciseid": 46, "name": "Tricep Pushdown", "description": "Works the triceps by pushing a cable down using a bar or rope attachment.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/tricep%20pushdown.mp4", "calories_burned": 14 },
+      { "exerciseid": 47, "name": "Overhead Dumbbell Extension", "description": "Targets the long head of the triceps with a single dumbbell overhead.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/overhead%20dumbell%20extension.mp4", "calories_burned": 18 },
+      { "exerciseid": 48, "name": "Triceps Dip (Machine)", "description": "Assisted dip machine to build triceps strength safely.", "sets": 3, "reps": 10, "duration": null, "resttime": 60, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/tricep%20dip.mp4", "calories_burned": 9 },
+      { "exerciseid": 49, "name": "Barbell Back Squat", "description": "Compound movement that builds quads, hamstrings, and glutes using a barbell.", "sets": 4, "reps": 8, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/barbell%20back%20squat.mp4", "calories_burned": 16 },
+      { "exerciseid": 50, "name": "Leg Press", "description": "Machine-based exercise that targets quads, glutes, and hamstrings.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/leg%20press.mp4", "calories_burned": 14 },
+      { "exerciseid": 51, "name": "Leg Extension", "description": "Isolates and strengthens the quadriceps via machine.", "sets": 3, "reps": 15, "duration": null, "resttime": 45, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/leg%20extension.mp4", "calories_burned": 14 },
+      { "exerciseid": 52, "name": "Leg Curl (Seated or Lying)", "description": "Targets the hamstrings using a machine.", "sets": 3, "reps": 15, "duration": null, "resttime": 45, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/leg%20curl.mp4", "calories_burned": 14 },
+      { "exerciseid": 53, "name": "Dumbbell Lunges", "description": "Enhances single-leg strength and balance using dumbbells.", "sets": 3, "reps": 10, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/dumbell%20lunges.mp4", "calories_burned": 15 },
+      { "exerciseid": 54, "name": "Glute Kickback (Cable)", "description": "Isolates the glutes using cable machine with ankle attachment.", "sets": 3, "reps": 15, "duration": null, "resttime": 30, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/glute%20kickback.mp4", "calories_burned": 18 },
+      { "exerciseid": 55, "name": "Standing Calf Raise", "description": "Works the calf muscles with bodyweight or added resistance.", "sets": 3, "reps": 20, "duration": null, "resttime": 30, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/standing%20calf%20raise.mp4", "calories_burned": 18 }
+    ]
+  },
+  "Muscle Builder": {
+    "id": 2,
+    "planname": "Muscle Builder",
+    "description": "A strength-focused routine with heavy compound lifts for hypertrophy.",
+    "difficulty": 5,
+    "goal": "Muscle Gain",
+    "exercises": [
+      { "exerciseid": 56, "name": "Lat Pulldown", "description": "Pulls down a bar to chest level to target the latissimus dorsi.", "sets": 3, "reps": 10, "duration": null, "resttime": 45, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/lat%20pulldown.mp4", "calories_burned": 12 },
+      { "exerciseid": 57, "name": "Seated Row (Cable)", "description": "Pulls a cable handle toward the torso to engage mid-back muscles.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/seated%20row.mp4", "calories_burned": 14 },
+      { "exerciseid": 58, "name": "Deadlift", "description": "Full-body compound lift emphasizing lower back, glutes, and hamstrings.", "sets": 4, "reps": 6, "duration": null, "resttime": 90, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/deadlift.mp4", "calories_burned": 12 },
+      { "exerciseid": 59, "name": "T-Bar Row", "description": "Uses a T-bar or landmine setup to strengthen the mid-back and lats.", "sets": 3, "reps": 10, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/t-bar%20row.mp4", "calories_burned": 15 },
+      { "exerciseid": 60, "name": "Cable Straight-Arm Pulldown", "description": "Isolates the lats by pulling down with extended arms.", "sets": 3, "reps": 15, "duration": null, "resttime": 45, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/straight%20arm%20pulldown.mp4", "calories_burned": 22 },
+      { "exerciseid": 61, "name": "Assisted Pull-Up", "description": "Uses a machine to support bodyweight for vertical pulling.", "sets": 3, "reps": 10, "duration": null, "resttime": 60, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/assited%20pull%20up.mp4", "calories_burned": 12 },
+      { "exerciseid": 62, "name": "Dumbbell Shoulder Press", "description": "Pushes dumbbells overhead to work all deltoid heads.", "sets": 3, "reps": 10, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/dumbell%20shoulder%20press.mp4", "calories_burned": 15 },
+      { "exerciseid": 63, "name": "Lateral Raise", "description": "Raises arms sideways to isolate lateral delts.", "sets": 3, "reps": 15, "duration": null, "resttime": 30, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/lateral%20raise.mp4", "calories_burned": 18 },
+      { "exerciseid": 64, "name": "Front Raise", "description": "Lifts weights forward to strengthen front delts.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/front%20raise.mp4", "calories_burned": 14 },
+      { "exerciseid": 65, "name": "Rear Delt Fly", "description": "Targets rear delts with reverse fly motion.", "sets": 3, "reps": 15, "duration": null, "resttime": 30, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/rear%20delt%20fly.mp4", "calories_burned": 14 },
+      { "exerciseid": 66, "name": "Smith Machine Overhead Press", "description": "Controlled overhead press using Smith machine.", "sets": 3, "reps": 10, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/smith%20shoulder%20press.mp4", "calories_burned": 15 },
+      { "exerciseid": 67, "name": "Barbell Bench Press", "description": "Lies on bench pressing barbell to chest for chest mass.", "sets": 4, "reps": 8, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/barbell%20bench%20press.mp4", "calories_burned": 16 },
+      { "exerciseid": 68, "name": "Incline Bench Press", "description": "Targets upper chest with incline bench and barbell.", "sets": 4, "reps": 10, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/incline%20bench%20press.mp4", "calories_burned": 20 }
+    ]
+  },
+  "Cardio Boost": {
+    "id": 3,
+    "planname": "Cardio Boost",
+    "description": "A cardio-centric routine to boost heart and lung capacity.",
+    "difficulty": 5,
+    "goal": "Cardiovascular Health",
+    "exercises": [
+      { "exerciseid": 69, "name": "Dumbbell Chest Press", "description": "Performs chest press with dumbbells for stability.", "sets": 3, "reps": 10, "duration": null, "resttime": 60, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/dumbell%20chest%20press.mp4", "calories_burned": 15 },
+      { "exerciseid": 70, "name": "Cable Chest Fly", "description": "Uses cables to bring arms together in arc for chest isolation.", "sets": 3, "reps": 15, "duration": null, "resttime": 45, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/chest%20fly.mp4", "calories_burned": 18 },
+      { "exerciseid": 71, "name": "Pec Deck Fly", "description": "Machine fly movement focusing on chest squeeze.", "sets": 3, "reps": 12, "duration": null, "resttime": 45, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/peck%20deck%20fly.mp4", "calories_burned": 11 },
+      { "exerciseid": 72, "name": "Push-Up", "description": "Bodyweight push using chest, triceps and shoulders.", "sets": 3, "reps": 15, "duration": null, "resttime": 30, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/push%20up.mp4", "calories_burned": 18 },
+      { "exerciseid": 73, "name": "Plank", "description": "Isometric hold that engages full core.", "sets": 3, "reps": null, "duration": 30, "resttime": 30, "difficulty": 3, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/plank.mp4", "calories_burned": 27 },
+      { "exerciseid": 74, "name": "Woodchopper", "description": "Rotational cable exercise targeting obliques.", "sets": 3, "reps": 12, "duration": null, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/wood%20chopper.mp4", "calories_burned": 18 },
+      { "exerciseid": 75, "name": "Seated Leg Raise", "description": "Raises legs on chair apparatus to work lower abs.", "sets": 3, "reps": 15, "duration": null, "resttime": 30, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/seated%20leg%20raise.mp4", "calories_burned": 18 },
+      { "exerciseid": 76, "name": "Weighted Plank", "description": "Static hold with added weight for core endurance.", "sets": 3, "reps": null, "duration": 30, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/weighted%20plank.mp4", "calories_burned": 45 },
+      { "exerciseid": 77, "name": "Bicycle Crunch", "description": "Dynamic twisting crunch that targets all abs.", "sets": 3, "reps": null, "duration": 60, "resttime": 30, "difficulty": 4, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/bycicle%20crunch.mp4", "calories_burned": 24 },
+      { "exerciseid": 78, "name": "Treadmill Running", "description": "Running on treadmill for aerobic conditioning.", "sets": 2, "reps": null, "duration": 150, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/treadmill%20running.mp4", "calories_burned": 500 },
+      { "exerciseid": 79, "name": "Stair Climber", "description": "Mimics stair climbing for legs and cardio.", "sets": 10, "reps": null, "duration": 600, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/stair%20climber.mp4", "calories_burned": 250 },
+      { "exerciseid": 80, "name": "Stationary Bike", "description": "Seated cycling for low-impact cardio.", "sets": 2, "reps": null, "duration": 150, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/stationary%20bike.mp4", "calories_burned": 500 },
+      { "exerciseid": 81, "name": "Rowing Machine", "description": "Rowing motion for full-body cardio and back work.", "sets": 10, "reps": null, "duration": 600, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/rowing.mp4", "calories_burned": 250 },
+      { "exerciseid": 82, "name": "Elliptical Trainer", "description": "Smooth striding motion for cardio with low joint impact.", "sets": 20, "reps": null, "duration": 1200, "resttime": 30, "difficulty": 5, "animationurl": "https://zxfzxpcbjikmzykfqxsc.supabase.co/storage/v1/object/public/exercisevids/vids/elliptical%20machine.mp4", "calories_burned": 500 }
+    ]
+  }
+};
   const { signUp } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = 'Register - Fitrack';
@@ -78,23 +147,6 @@ export default function Register() {
     setErrors({});
 
     try {
-      // Fetch template exercises before user creation
-      const [
-        fatBurnerExercises,
-        muscleBuilderExercises,
-        cardioBoostExercises
-      ] = await Promise.all([
-        fetchPlanExercises(1), // Plan ID for Fat Burner
-        fetchPlanExercises(2), // Plan ID for Muscle Builder
-        fetchPlanExercises(3)  // Plan ID for Cardio Boost
-      ]);
-
-      if (!fatBurnerExercises || !muscleBuilderExercises || !cardioBoostExercises) {
-        setGeneralError('Failed to load default workout plan templates. Please try again.');
-        setLoading(false);
-        return;
-      }
-
       // Create the new user via Supabase Auth
       const { data: authData, error: authError } = await signUp({
         email: formData.email,
@@ -125,78 +177,57 @@ export default function Register() {
         return;
       }
 
-      // 2) Insert the three default plans into WorkoutPlan
-      //    We’re using .insert(...).select() to retrieve each new plan’s planid
-      const defaultPlans = [
-        {
-          planname: 'Fat Burner',
-          description: 'A mix of cardio and core exercises to aid fat loss.',
-          difficulty: 4,
-          goal: 'Weight Loss',
+      const plansToInsert = [];
+      const planExercisesToInsert = [];
+
+      for (const planName in DEFAULT_WORKOUT_PLANS) {
+        const planData = DEFAULT_WORKOUT_PLANS[planName];
+        plansToInsert.push({
+          planname: planData.planname,
+          description: planData.description,
+          difficulty: planData.difficulty,
+          goal: planData.goal,
           userid: newUser.id
-        },
-        {
-          planname: 'Muscle Builder',
-          description: 'A strength-focused routine with heavy compound lifts for hypertrophy.',
-          difficulty: 5,
-          goal: 'Muscle Gain',
-          userid: newUser.id
-        },
-        {
-          planname: 'Cardio Boost',
-          description: 'A cardio-centric routine to boost heart and lung capacity.',
-          difficulty: 5,
-          goal: 'Cardiovascular Health',
-          userid: newUser.id
-        }
-      ];
+        });
+      }
 
       const { data: insertedPlans, error: planInsertError } = await supabase
         .from('WorkoutPlan')
-        .insert(defaultPlans)
-        .select('planid, planname'); // Also select planname to match correctly
+        .insert(plansToInsert)
+        .select('planid, planname');
 
       if (planInsertError) {
         console.error('Error inserting default plans:', planInsertError);
-        setGeneralError('Account created, but failed to add default workout plans.');
-        setSubmitted(true);
+        setGeneralError('Account created, but failed to add default workout plans. Please check your email to confirm your account.');
+        setSubmitted(true); // Still consider signup "successful" for the user
         setLoading(false);
         return;
       }
 
-      // 3) Build and insert the corresponding WorkoutPlanExercise rows
-      const allNewPlanExercises = [];
-
-      // Map template exercises to new plan IDs
-      const mapAndAddExercises = (templateExercises, newPlanName) => {
-        const newPlan = insertedPlans.find(p => p.planname === newPlanName);
-        if (newPlan) {
-          templateExercises.forEach(ex => {
-            allNewPlanExercises.push({
-              planid: newPlan.planid,
-              exerciseid: ex.exerciseid,
-              exercise_order: ex.exercise_order
+      for (const plan of insertedPlans) {
+        const originalPlan = DEFAULT_WORKOUT_PLANS[plan.planname];
+        if (originalPlan && originalPlan.exercises) {
+          originalPlan.exercises.forEach((exercise, index) => {
+            planExercisesToInsert.push({
+              planid: plan.planid,
+              exerciseid: exercise.exerciseid,
+              exercise_order: index + 1 // Assign exercise_order based on array index
             });
           });
         }
-      };
+      }
 
-      mapAndAddExercises(fatBurnerExercises, 'Fat Burner');
-      mapAndAddExercises(muscleBuilderExercises, 'Muscle Builder');
-      mapAndAddExercises(cardioBoostExercises, 'Cardio Boost');
-      
       const { error: planExInsertError } = await supabase
         .from('WorkoutPlanExercise')
-        .insert(allNewPlanExercises);
+        .insert(planExercisesToInsert);
 
       if (planExInsertError) {
         console.error('Error inserting default plan exercises:', planExInsertError);
-        // Again—we’ve already created the user and plans, so we’ll consider signup “successful.”
-        // If you want to inform the user, you could set: 
+        // User account and plans are created, but exercises failed.
+        // We can inform the user but don't prevent signup completion.
         // setGeneralError('Account created, but failed to add exercises to default plans.');
       }
 
-      // 4) Finally, mark registration as submitted (so they see “Check your email”)
       setSubmitted(true);
     } catch (error) {
       console.error('Registration submission error:', error);
